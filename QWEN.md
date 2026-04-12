@@ -28,3 +28,6 @@ Python 3.11+ (backend), TypeScript 5.x (frontend): Follow standard conventions
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
+
+## Qwen Added Memories
+- GitHub repository URL: https://github.com/WETErokAI/EnglishBooksReader

@@ -24,16 +24,16 @@
 
 **Purpose**: Инициализация проекта и базовой структуры
 
-- [ ] T001 [P] Создать структуру директорий backend согласно plan.md: `backend/src/{controllers,services,repositories,models,schemas,utils}`, `backend/tests/{unit,integration}`, `backend/app/`
-- [ ] T002 [P] Создать структуру директорий frontend согласно plan.md: `frontend/src/{components,pages,services,hooks,types,utils}`, `frontend/tests/{unit,integration}`
-- [ ] T003 Создать `backend/requirements.txt` с зависимостями из quickstart.md (fastapi, uvicorn, sqlalchemy, alembic, psycopg2-binary, lxml, ebooklib, pillow, pytest, и др.)
-- [ ] T004 Создать `frontend/package.json` с зависимостями из quickstart.md (react, react-router-dom, @tanstack/react-query, axios, vite, tailwindcss, typescript, vitest)
-- [ ] T005 [P] Настроить `backend/app/config.py` для управления конфигурацией через переменные окружения (DATABASE_URL, BOOKS_STORAGE_PATH, COVERS_STORAGE_PATH)
-- [ ] T006 [P] Создать `backend/.env.example` с шаблоном конфигурации
-- [ ] T007 [P] Создать `frontend/.env.local` с `VITE_API_BASE_URL=http://localhost:8000/api/v1`
-- [ ] T008 [P] Настроить Tailwind CSS в frontend (`frontend/tailwind.config.ts`, `frontend/postcss.config.js`)
-- [ ] T009 [P] Настроить Vite в frontend (`frontend/vite.config.ts`)
-- [ ] T010 Настроить `frontend/tsconfig.json` для TypeScript
+- [x] T001 [P] Создать структуру директорий backend согласно plan.md: `backend/src/{controllers,services,repositories,models,schemas,utils}`, `backend/tests/{unit,integration}`, `backend/app/`
+- [x] T002 [P] Создать структуру директорий frontend согласно plan.md: `frontend/src/{components,pages,services,hooks,types,utils}`, `frontend/tests/{unit,integration}`
+- [x] T003 Создать `backend/requirements.txt` с зависимостями из quickstart.md (fastapi, uvicorn, sqlalchemy, alembic, psycopg2-binary, lxml, ebooklib, pillow, pytest, и др.)
+- [x] T004 Создать `frontend/package.json` с зависимостями из quickstart.md (react, react-router-dom, @tanstack/react-query, axios, vite, tailwindcss, typescript, vitest)
+- [x] T005 [P] Настроить `backend/app/config.py` для управления конфигурацией через переменные окружения (DATABASE_URL, BOOKS_STORAGE_PATH, COVERS_STORAGE_PATH)
+- [x] T006 [P] Создать `backend/.env.example` с шаблоном конфигурации
+- [x] T007 [P] Создать `frontend/.env.local` с `VITE_API_BASE_URL=http://localhost:8000/api/v1`
+- [x] T008 [P] Настроить Tailwind CSS в frontend (`frontend/tailwind.config.ts`, `frontend/postcss.config.js`)
+- [x] T009 [P] Настроить Vite в frontend (`frontend/vite.config.ts`)
+- [x] T010 Настроить `frontend/tsconfig.json` для TypeScript
 
 ---
 
@@ -43,18 +43,18 @@
 
 **⚠️ CRITICAL**: Нельзя начинать user stories до завершения этой фазы
 
-- [ ] T011 Инициализировать Alembic для миграций БД: создать `backend/alembic.ini` и `backend/alembic/env.py` с настройкой PostgreSQL
-- [ ] T012 Создать модель Book в `backend/src/models/book.py` (SQLAlchemy модель согласно data-model.md: id, title, author, file_path, file_format, file_size, cover_image_path, cover_thumbnail_path, date_added, last_reading_position)
-- [ ] T013 Создать модель BookChunk в `backend/src/models/book_chunk.py` (SQLAlchemy модель: id, book_id, chunk_index, content_html, word_count)
-- [ ] T014 Создать первую миграцию Alembic для таблиц books и book_chunks
-- [ ] T015 [P] Создать Pydantic схемы в `backend/src/schemas/book.py`: BookCreate, BookUpdate, BookDTO, BookListDTO (согласно data-model.md)
-- [ ] T016 Создать базовый репозиторий BookRepository в `backend/src/repositories/book_repository.py` с методами: get_all, get_by_id, add, delete, update, check_duplicate, search
-- [ ] T017 [P] Настроить CORS middleware в `backend/app/main.py` для подключения frontend (localhost:5173)
-- [ ] T018 [P] Создать `backend/app/main.py` с базовым FastAPI приложением и health check endpoint `/health`
-- [ ] T019 [P] Создать утилиту валидации файлов в `backend/src/utils/file_validator.py` (проверка формата: txt|epub|fb2, проверка размера ≤50 МБ)
-- [ ] T020 Настроить директорию хранения файлов: создать `storage/{books,covers,thumbnails}` и утилиты для генерации путей в `backend/src/utils/storage.py`
-- [ ] T021 Создать базовый API клиент в `frontend/src/services/apiClient.ts` (axios instance с baseURL из env)
-- [ ] T022 [P] Создать TypeScript типы в `frontend/src/types/book.ts` (BookDTO, BookListDTO, ReadingPosition, ErrorResponse)
+- [x] T011 Инициализировать Alembic для миграций БД: создать `backend/alembic.ini` и `backend/alembic/env.py` с настройкой PostgreSQL
+- [x] T012 Создать модель Book в `backend/src/models/book.py` (SQLAlchemy модель согласно data-model.md: id, title, author, file_path, file_format, file_size, cover_image_path, cover_thumbnail_path, date_added, last_reading_position)
+- [x] T013 Создать модель BookChunk в `backend/src/models/book_chunk.py` (SQLAlchemy модель: id, book_id, chunk_index, content_html, word_count)
+- [x] T014 Создать первую миграцию Alembic для таблиц books и book_chunks
+- [x] T015 [P] Создать Pydantic схемы в `backend/src/schemas/book.py`: BookCreate, BookUpdate, BookDTO, BookListDTO (согласно data-model.md)
+- [x] T016 Создать базовый репозиторий BookRepository в `backend/src/repositories/book_repository.py` с методами: get_all, get_by_id, add, delete, update, check_duplicate, search
+- [x] T017 [P] Настроить CORS middleware в `backend/app/main.py` для подключения frontend (localhost:5173)
+- [x] T018 [P] Создать `backend/app/main.py` с базовым FastAPI приложением и health check endpoint `/health`
+- [x] T019 [P] Создать утилиту валидации файлов в `backend/src/utils/file_validator.py` (проверка формата: txt|epub|fb2, проверка размера ≤50 МБ)
+- [x] T020 Настроить директорию хранения файлов: создать `storage/{books,covers,thumbnails}` и утилиты для генерации путей в `backend/src/utils/storage.py`
+- [x] T021 Создать базовый API клиент в `frontend/src/services/apiClient.ts` (axios instance с baseURL из env)
+- [x] T022 [P] Создать TypeScript типы в `frontend/src/types/book.ts` (BookDTO, BookListDTO, ReadingPosition, ErrorResponse)
 
 **Checkpoint**: Foundation готова — можно начинать user stories
 
@@ -70,34 +70,34 @@
 
 > **NOTE: Написать эти тесты ПЕРВЫМИ, убедиться что они ПАДАЮТ перед реализацией**
 
-- [ ] T023 [P] [US1] Unit-тест file_validator в `backend/tests/unit/test_file_validator.py` (валидные форматы, превышение размера, неподдерживаемый формат)
-- [ ] T024 [P] [US1] Unit-тест epub parser в `backend/tests/unit/test_epub_parser.py` (извлечение названия, автора, обложки, обработка повреждённых файлов)
-- [ ] T025 [P] [US1] Unit-тест fb2 parser в `backend/tests/unit/test_fb2_parser.py` (извлечение названия, автора, обложки, обработка повреждённых файлов)
-- [ ] T026 [P] [US1] Unit-тест txt parser в `backend/tests/unit/test_txt_parser.py` (название из filename, нет автора/обложки)
-- [ ] T027 [P] [US1] Unit-тест book chunking service в `backend/tests/unit/test_chunking_service.py` (разбиение на чанки по главам, fallback на фиксированный размер)
-- [ ] T028 [US1] Интеграционный тест upload endpoint в `backend/tests/integration/test_book_upload.py` (успешная загрузка файла, дубликат, превышение размера, неподдерживаемый формат, повреждённый файл)
-- [ ] T029 [P] [US1] Unit-тест useUpload hook в `frontend/tests/unit/test_useUpload.test.tsx` (успешная загрузка, ошибка, прогресс)
+- [x] T023 [P] [US1] Unit-тест file_validator в `backend/tests/unit/test_file_validator.py` (валидные форматы, превышение размера, неподдерживаемый формат)
+- [x] T024 [P] [US1] Unit-тест epub parser в `backend/tests/unit/test_epub_parser.py` (извлечение названия, автора, обложки, обработка повреждённых файлов) **+ тесты с реальным файлом fixtures/pg84.epub**
+- [x] T025 [P] [US1] Unit-тест fb2 parser в `backend/tests/unit/test_fb2_parser.py` (извлечение названия, автора, обложки, обработка повреждённых файлов) **+ тесты с реальным файлом fixtures/867660.fb2**
+- [x] T026 [P] [US1] Unit-тест txt parser в `backend/tests/unit/test_txt_parser.py` (название из filename, нет автора/обложки)
+- [x] T027 [P] [US1] Unit-тест book chunking service в `backend/tests/unit/test_chunking_service.py` (разбиение на чанки по главам, fallback на фиксированный размер)
+- [x] T028 [US1] Интеграционный тест upload endpoint в `backend/tests/integration/test_book_upload.py` (успешная загрузка файла, дубликат, превышение размера, неподдерживаемый формат, повреждённый файл)
+- [x] T029 [P] [US1] Unit-тест useUpload hook в `frontend/tests/unit/test_useUpload.test.tsx` (успешная загрузка, ошибка, прогресс)
 
 ### Реализация для User Story 1
 
 #### Backend — Парсеры и сервисы
-- [ ] T030 [P] [US1] Создать сервис парсинга EPUB в `backend/src/services/epub_parser.py` (извлечение метаданных: title, author, cover через ebooklib)
-- [ ] T031 [P] [US1] Создать сервис парсинга FB2 в `backend/src/services/fb2_parser.py` (извлечение метаданных: title, author, cover через lxml XML parsing)
-- [ ] T032 [P] [US1] Создать сервис парсинга TXT в `backend/src/services/txt_parser.py` (название из filename, нет автора/обложки)
-- [ ] T033 [US1] Создать сервис обработки изображений в `backend/src/services/cover_processor.py` (извлечение обложки, создание миниатюры 200x300 через Pillow)
-- [ ] T034 [US1] Создать сервис чанкинга книг в `backend/src/services/chunking_service.py` (разбиение по главам, fallback на ~5000 слов, генерация HTML chunks)
-- [ ] T035 [US1] Создать BookService в `backend/src/services/book_service.py` (бизнес-логика загрузки: валидация → парсинг → чанкинг → сохранение, проверка на дубликаты)
+- [x] T030 [P] [US1] Создать сервис парсинга EPUB в `backend/src/services/epub_parser.py` (извлечение метаданных: title, author, cover через ebooklib)
+- [x] T031 [P] [US1] Создать сервис парсинга FB2 в `backend/src/services/fb2_parser.py` (извлечение метаданных: title, author, cover через lxml XML parsing)
+- [x] T032 [P] [US1] Создать сервис парсинга TXT в `backend/src/services/txt_parser.py` (название из filename, нет автора/обложки)
+- [x] T033 [US1] Создать сервис обработки изображений в `backend/src/services/cover_processor.py` (извлечение обложки, создание миниатюры 200x300 через Pillow)
+- [x] T034 [US1] Создать сервис чанкинга книг в `backend/src/services/chunking_service.py` (разбиение по главам, fallback на ~5000 слов, генерация HTML chunks)
+- [x] T035 [US1] Создать BookService в `backend/src/services/book_service.py` (бизнес-логика загрузки: валидация → парсинг → чанкинг → сохранение, проверка на дубликаты)
 
 #### Backend — Controllers
-- [ ] T036 [US1] Создать BookController в `backend/src/controllers/book_controller.py` с endpoint POST `/api/v1/books/upload` (multipart/form-data upload)
-- [ ] T037 [US1] Добавить endpoint POST `/api/v1/books/upload-from-url` в BookController (загрузка по ссылке через httpx)
+- [x] T036 [US1] Создать BookController в `backend/src/controllers/book_controller.py` с endpoint POST `/api/v1/books/upload` (multipart/form-data upload)
+- [x] T037 [US1] Добавить endpoint POST `/api/v1/books/upload-from-url` в BookController (загрузка по ссылке через httpx)
 
 #### Frontend — Компоненты загрузки
-- [ ] T038 [P] [US1] Создать компонент UploadForm в `frontend/src/components/UploadForm.tsx` (выбор файла, drag-and-drop, индикатор прогресса)
-- [ ] T039 [P] [US1] Создать компонент UrlUploadForm в `frontend/src/components/UrlUploadForm.tsx` (ввод URL, валидация)
-- [ ] T040 [US1] Создать hook useUpload в `frontend/src/hooks/useUpload.ts` (логика загрузки файла/URL, обработка ошибок, прогресс)
-- [ ] T041 [US1] Создать страницу UploadPage в `frontend/src/pages/UploadPage.tsx` (объединяет UploadForm + UrlUploadForm)
-- [ ] T042 [US1] Настроить React Query client в `frontend/src/services/bookApi.ts` (mutation для uploadBook, uploadBookFromUrl)
+- [x] T038 [P] [US1] Создать компонент UploadForm в `frontend/src/components/UploadForm.tsx` (выбор файла, drag-and-drop, индикатор прогресса)
+- [x] T039 [P] [US1] Создать компонент UrlUploadForm в `frontend/src/components/UrlUploadForm.tsx` (ввод URL, валидация)
+- [x] T040 [US1] Создать hook useUpload в `frontend/src/hooks/useUpload.ts` (логика загрузки файла/URL, обработка ошибок, прогресс)
+- [x] T041 [US1] Создать страницу UploadPage в `frontend/src/pages/UploadPage.tsx` (объединяет UploadForm + UrlUploadForm)
+- [x] T042 [US1] Настроить React Query client в `frontend/src/services/bookApi.ts` (mutation для uploadBook, uploadBookFromUrl)
 
 **Checkpoint**: User Story 1 полностью функциональна — можно загрузить книгу и увидеть в БД
 
