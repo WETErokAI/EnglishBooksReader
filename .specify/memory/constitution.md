@@ -1,50 +1,112 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+SYNC IMPACT REPORT
+==================
+Version change: 1.0.0 → 1.1.0
+Bump rationale: MINOR — добавлен новый принцип (Локальность), уточнён принцип III (TDD: тесты до кода)
+
+Modified principles:
+  - III. Тесты обязательны → уточнено: TDD, тесты пишутся ДО кода (Red-Green-Refactor)
+
+Added sections:
+  - VII. Локальность (Local-First)
+  - Технологический стек: добавлены локальные AI-модели (Kokoro, Qwen3-TTS, LLM)
+
+Removed sections: N/A
+
+Templates requiring updates:
+  - .specify/templates/plan-template.md — ✅ совместим
+  - .specify/templates/spec-template.md — ✅ совместим
+  - .specify/templates/tasks-template.md — ✅ совместим
+
+Follow-up TODOs: N/A
+-->
+
+# EnglishBooksReader Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Простота (Simplicity)
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Не усложняй задачи, которые тебе ставят. Решения должны быть минимально достаточными для выполнения требований. Избегай преждевременной оптимизации и избыточной абстракции. Если задача решается простым способом — используй его.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rationale**: Простой код легче читать, тестировать и поддерживать. Сложность должна быть оправдана реальной необходимостью.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Feature-ветки (Feature Branches)
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+Делай новые фичи в отдельных ветках. Каждая новая функциональность разрабатывается в изолированной ветке с описательным именем (например, `feature/user-auth`). Слияние в основную ветку происходит только после прохождения ревью и тестов.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Rationale**: Изоляция изменений предотвращает поломку стабильной версии, упрощает код-ревью и откат проблемных изменений.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. TDD: тесты до кода (Test-First NON-NEGOTIABLE)
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Тесты пишутся **до** кода. Строго соблюдается цикл Red-Green-Refactor:
+1. **Red**: напиши тест на новую функциональность — он должен упасть.
+2. **Green**: напиши минимальный код, чтобы тест прошёл.
+3. **Refactor**: улучши код, не ломая тесты.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Каждый новый функционал должен быть покрыт тестами до начала реализации. Тесты — это не опция, а обязательное требование для любого кода, попадающего в основную ветку.
+
+**Rationale**: TDD гарантирует, что код проектируется через призму требований, а не реализации. Тесты до кода предотвращают «тестирование после факта» и обеспечивают истинное покрытие.
+
+### IV. Запуск тестов (Run Tests After Changes)
+
+Запускай тесты после каждого изменения в коде. Ни одно изменение не считается завершённым, пока не прошли все тесты. Это включает unit-тесты, интеграционные тесты и end-to-end тесты (если применимо).
+
+**Rationale**: Раннее обнаружение регрессий снижает стоимость исправлений. Автоматическая проверка после изменений — основа надёжной разработки.
+
+### V. Документация и стиль кода (Documentation & Code Style)
+
+Пиши документацию по-русски в стиле Google Docstring. Используй именованные аргументы в функциях вместо позиционных. Все docstring, комментарии и внешняя документация — на русском языке.
+
+**Rationale**: Русскоязычная документация соответствует языку команды. Именованные аргументы повышают читаемость и снижают вероятность ошибок при вызове функций.
+
+### VI. Архитектура Controller > Service > CRUD
+
+Сохраняй архитектуру Controller > Service > CRUD. Каждый слой имеет чёткую ответственность:
+- **Controller**: обработка HTTP-запросов, валидация входных данных, вызов сервисов, формирование ответа.
+- **Service**: бизнес-логика, координация операций, транзакции.
+- **CRUD**: операции с данными (создание, чтение, обновление, удаление), работа с базой данных.
+
+Запрещено смешивать ответственность слоёв. Controller не должен содержать бизнес-логику. Service не должен работать с HTTP-контекстом напрямую.
+
+**Rationale**: Разделение ответственности упрощает тестирование, повторное использование кода и поддержку. Каждый слой можно изменять независимо от других.
+
+### VII. Локальность (Local-First)
+
+Проект работает локально на Windows 10 без облачных зависимостей. Все AI-модели (Kokoro, Qwen3-TTS, LLM) запускаются локально через API. Никакие компоненты не зависят от внешних облачных сервисов для своей основной функциональности.
+
+**Rationale**: Локальная работа обеспечивает приватность данных, независимость от интернета и воспроизводимость. Пользователь полностью контролирует свои данные и инфраструктуру.
+
+## Технологический стек
+
+**Frontend**: TypeScript + Vite + Tailwind CSS
+**Backend**: Python 3.11+ + FastAPI + Uvicorn
+**База данных**: PostgreSQL
+**AI-модели**: Kokoro (TTS), Qwen3-TTS, LLM — все запускаются локально через API
+
+Все компоненты должны быть совместимы с указанными технологиями. Выбор дополнительных библиотек и инструментов должен быть обоснован и согласован. Облачные зависимости запрещены.
+
+## Рабочий процесс
+
+1. **Создание ветки**: Для каждой задачи создаётся отдельная ветка от актуальной `main`.
+2. **Разработка**: Код пишется с соблюдением принципов I–VI.
+3. **Тестирование**: Тесты запускаются локально после каждого изменения. Все тесты должны проходить.
+4. **Документация**: Обновляется документация на русском языке при изменении функционала.
+5. **Pull Request**: Создаётся PR из feature-ветки в `main`. PR должен содержать описание изменений, ссылку на задачу и результаты тестов.
+6. **Ревью**: Код проходит ревью минимум одним разработчиком. Проверяется соответствие принципам конституции.
+7. **Слияние**: После успешного ревью и прохождения всех тестов код сливается в `main`.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Конституция имеет приоритет над всеми другими практиками разработки. Любые отступления должны быть явно обоснованы и задокументированы.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Поправки**: Изменения в конституцию вносятся через Pull Request с описанием причины изменения. Поправка считается принятой после одобрения всеми участниками проекта.
+
+**Версионирование**: Версия конституции следует семантическому версионированию MAJOR.MINOR.PATCH:
+- MAJOR: удаление или обратная несовместимость принципов.
+- MINOR: добавление новых принципов или существенное расширение существующих.
+- PATCH: уточнения, исправления формулировок, опечатки.
+
+**Проверка соответствия**: Каждый Pull Request должен проверяться на соответствие принципам конституции. Нарушения должны быть явно обоснованы в описании PR.
+
+**Version**: 1.1.0 | **Ratified**: 2026-04-08 | **Last Amended**: 2026-04-08
