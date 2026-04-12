@@ -17,12 +17,11 @@
 #### 1. Backend
 
 ```powershell
+# Активировать conda окружение
+conda activate english-books-reader
+
 # Перейти в директорию backend
 cd g:\AI\gpt\EnglishBooksReader\backend
-
-# Создать виртуальное окружение
-python -m venv .venv
-.venv\Scripts\Activate.ps1
 
 # Установить зависимости
 pip install -r requirements.txt
