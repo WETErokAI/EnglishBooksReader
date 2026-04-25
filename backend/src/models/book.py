@@ -43,11 +43,21 @@ class Book(Base):
     date_added = Column(DateTime, nullable=False, default=datetime.utcnow)
     last_reading_position = Column(JSON, nullable=True)
 
-    chunks = relationship("BookChunk", back_populates="book", lazy="selectin")
+    chunks = relationship(
+        "BookChunk",
+        back_populates="book",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
 
     __table_args__ = (
         Index("idx_book_title_author", "title", "author"),
     )
+
+    @property
+    def has_reading_position(self) -> bool:
+        """Проверить есть ли сохранённая позиция чтения."""
+        return self.last_reading_position is not None
 
     def __repr__(self) -> str:
         return f"<Book(id={self.id}, title='{self.title}', author='{self.author}')>"
