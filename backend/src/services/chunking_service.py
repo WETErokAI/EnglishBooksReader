@@ -139,7 +139,7 @@ class ChunkingService:
         Returns:
             Количество слов.
         """
-        # Удаляем HTML теги
-        text = re.sub(r"<[^>]+>", "", html)
+        # Заменяем HTML теги на пробелы (чтобы слова не слипались)
+        text = re.sub(r"<[^>]+>", " ", html)
         # Считаем слова
         return len(text.split())

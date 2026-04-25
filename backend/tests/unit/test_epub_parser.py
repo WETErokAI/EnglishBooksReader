@@ -30,11 +30,13 @@ class TestEpubParser:
         epub_file.write_bytes(b"fake epub content")
 
         mock_book = MagicMock()
-        mock_book.get_metadata.return_value = {
-            "DC": {"title": ["The Great Gatsby"]}
-        }
+        # ebooklib.get_metadata возвращает list of (value, attrs) tuples
+        mock_book.get_metadata.side_effect = lambda ns, name: {
+            ("DC", "title"): [("The Great Gatsby", {})],
+            ("DC", "creator"): [],
+        }.get((ns, name), [])
 
-        with patch("src.services.epub_parser.EpubBook.read_epub") as mock_read:
+        with patch("ebooklib.epub.read_epub") as mock_read:
             mock_read.return_value = mock_book
             metadata = EpubParser.parse(epub_file)
 
@@ -46,14 +48,12 @@ class TestEpubParser:
         epub_file.write_bytes(b"fake epub content")
 
         mock_book = MagicMock()
-        mock_book.get_metadata.return_value = {
-            "DC": {
-                "title": ["Test Book"],
-                "creator": ["F. Scott Fitzgerald"],
-            }
-        }
+        mock_book.get_metadata.side_effect = lambda ns, name: {
+            ("DC", "title"): [("Test Book", {})],
+            ("DC", "creator"): [("F. Scott Fitzgerald", {})],
+        }.get((ns, name), [])
 
-        with patch("src.services.epub_parser.EpubBook.read_epub") as mock_read:
+        with patch("ebooklib.epub.read_epub") as mock_read:
             mock_read.return_value = mock_book
             metadata = EpubParser.parse(epub_file)
 
@@ -65,14 +65,12 @@ class TestEpubParser:
         epub_file.write_bytes(b"fake epub content")
 
         mock_book = MagicMock()
-        mock_book.get_metadata.return_value = {
-            "DC": {
-                "title": ["Test Book"],
-                "creator": ["Author One", "Author Two"],
-            }
-        }
+        mock_book.get_metadata.side_effect = lambda ns, name: {
+            ("DC", "title"): [("Test Book", {})],
+            ("DC", "creator"): [("Author One", {}), ("Author Two", {})],
+        }.get((ns, name), [])
 
-        with patch("src.services.epub_parser.EpubBook.read_epub") as mock_read:
+        with patch("ebooklib.epub.read_epub") as mock_read:
             mock_read.return_value = mock_book
             metadata = EpubParser.parse(epub_file)
 
@@ -84,11 +82,12 @@ class TestEpubParser:
         epub_file.write_bytes(b"fake epub content")
 
         mock_book = MagicMock()
-        mock_book.get_metadata.return_value = {
-            "DC": {"title": []}
-        }
+        mock_book.get_metadata.side_effect = lambda ns, name: {
+            ("DC", "title"): [],
+            ("DC", "creator"): [],
+        }.get((ns, name), [])
 
-        with patch("src.services.epub_parser.EpubBook.read_epub") as mock_read:
+        with patch("ebooklib.epub.read_epub") as mock_read:
             mock_read.return_value = mock_book
             metadata = EpubParser.parse(epub_file)
 
@@ -100,11 +99,12 @@ class TestEpubParser:
         epub_file.write_bytes(b"fake epub content")
 
         mock_book = MagicMock()
-        mock_book.get_metadata.return_value = {
-            "DC": {"title": ["Test Book"]}
-        }
+        mock_book.get_metadata.side_effect = lambda ns, name: {
+            ("DC", "title"): [("Test Book", {})],
+            ("DC", "creator"): [],
+        }.get((ns, name), [])
 
-        with patch("src.services.epub_parser.EpubBook.read_epub") as mock_read:
+        with patch("ebooklib.epub.read_epub") as mock_read:
             mock_read.return_value = mock_book
             metadata = EpubParser.parse(epub_file)
 
@@ -117,14 +117,15 @@ class TestEpubParser:
         cover_data = b"fake cover image data"
 
         mock_book = MagicMock()
-        mock_book.get_metadata.return_value = {
-            "DC": {"title": ["Test Book"]}
-        }
+        mock_book.get_metadata.side_effect = lambda ns, name: {
+            ("DC", "title"): [("Test Book", {})],
+            ("DC", "creator"): [],
+        }.get((ns, name), [])
         mock_item = MagicMock()
         mock_item.get_content.return_value = cover_data
         mock_book.get_item_with_id.return_value = mock_item
 
-        with patch("src.services.epub_parser.EpubBook.read_epub") as mock_read:
+        with patch("ebooklib.epub.read_epub") as mock_read:
             mock_read.return_value = mock_book
             metadata = EpubParser.parse(epub_file)
 
@@ -136,12 +137,13 @@ class TestEpubParser:
         epub_file.write_bytes(b"fake epub content")
 
         mock_book = MagicMock()
-        mock_book.get_metadata.return_value = {
-            "DC": {"title": ["Test Book"]}
-        }
+        mock_book.get_metadata.side_effect = lambda ns, name: {
+            ("DC", "title"): [("Test Book", {})],
+            ("DC", "creator"): [],
+        }.get((ns, name), [])
         mock_book.get_item_with_id.return_value = None
 
-        with patch("src.services.epub_parser.EpubBook.read_epub") as mock_read:
+        with patch("ebooklib.epub.read_epub") as mock_read:
             mock_read.return_value = mock_book
             metadata = EpubParser.parse(epub_file)
 
@@ -152,7 +154,7 @@ class TestEpubParser:
         epub_file = tmp_path / "corrupted.epub"
         epub_file.write_bytes(b"not a real epub")
 
-        with patch("src.services.epub_parser.EpubBook.read_epub") as mock_read:
+        with patch("ebooklib.epub.read_epub") as mock_read:
             mock_read.side_effect = Exception("Invalid EPUB file")
             with pytest.raises(ValueError) as exc_info:
                 EpubParser.parse(epub_file)

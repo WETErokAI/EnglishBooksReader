@@ -20,6 +20,22 @@ export interface BookDTO {
 export interface BookListDTO {
   books: BookDTO[];
   total: number;
+  page?: number;
+  page_size?: number;
+}
+
+/** Параметры для чанков книги */
+export interface BookChunksResponse {
+  book_id: string;
+  chunks: BookChunkDTO[];
+  total_chunks: number;
+}
+
+/** DTO для чанка книги */
+export interface BookChunkDTO {
+  chunk_index: number;
+  content_html: string;
+  word_count: number;
 }
 
 /** Позиция чтения */
@@ -36,13 +52,13 @@ export interface ErrorResponse {
 
 /** Параметры для получения списка книг */
 export interface GetBooksParams {
-  skip?: number;
-  limit?: number;
+  page?: number;
+  page_size?: number;
   search?: string;
 }
 
 /** Данные для обновления книги */
 export interface BookUpdate {
   title?: string;
-  author?: string;
+  author?: string | undefined;
 }

@@ -111,37 +111,37 @@
 
 ### Тесты для User Story 2 (TDD — писать ДО кода) ⚠️
 
-- [ ] T043 [P] [US2] Unit-тест BookRepository search/duplicate methods в `backend/tests/unit/test_book_repository.py`
-- [ ] T044 [P] [US2] Unit-тест reading position service в `backend/tests/unit/test_reading_position_service.py`
-- [ ] T045 [US2] Интеграционный тест library endpoints в `backend/tests/integration/test_library_operations.py` (GET список, PATCH rename, DELETE, GET chunks, GET/POST reading position)
-- [ ] T046 [P] [US2] Unit-тест BookCard component в `frontend/tests/unit/test_BookCard.test.tsx`
-- [ ] T047 [P] [US2] Unit-тест BookList component в `frontend/tests/unit/test_BookList.test.tsx`
+- [X] T043 [P] [US2] Unit-тест BookRepository search/duplicate methods в `backend/tests/unit/test_book_repository.py`
+- [X] T044 [P] [US2] Unit-тест reading position service в `backend/tests/unit/test_reading_position_service.py`
+- [X] T045 [US2] Интеграционный тест library endpoints в `backend/tests/integration/test_library_operations.py` (GET список, PATCH rename, DELETE, GET chunks, GET/POST reading position)
+- [X] T046 [P] [US2] Unit-тест BookCard component в `frontend/tests/unit/test_BookCard.test.tsx`
+- [X] T047 [P] [US2] Unit-тест BookList component в `frontend/tests/unit/test_BookList.test.tsx`
 
 ### Реализация для User Story 2
 
 #### Backend — Сервисы и Controllers
-- [ ] T048 [P] [US2] Создать ReadingPositionService в `backend/src/services/reading_position_service.py` (сохранение/получение позиции чтения)
-- [ ] T049 [US2] Добавить endpoint GET `/api/v1/books` в BookController (с пагинацией и поиском)
-- [ ] T050 [US2] Добавить endpoint GET `/api/v1/books/{book_id}` в BookController
-- [ ] T051 [US2] Добавить endpoint PATCH `/api/v1/books/{book_id}` в BookController (переименование)
-- [ ] T052 [US2] Добавить endpoint DELETE `/api/v1/books/{book_id}` в BookController (удаление записи, файл не трогать)
-- [ ] T053 [US2] Добавить endpoint GET `/api/v1/books/{book_id}/chunks` в BookController (получение чанков для чтения)
-- [ ] T054 [US2] Добавить endpoints POST/GET `/api/v1/books/{book_id}/reading-position` в BookController
+- [X] T048 [P] [US2] Создать ReadingPositionService в `backend/src/services/reading_position_service.py` (сохранение/получение позиции чтения)
+- [X] T049 [US2] Добавить endpoint GET `/api/v1/books` в BookController (с пагинацией и поиском)
+- [X] T050 [US2] Добавить endpoint GET `/api/v1/books/{book_id}` в BookController
+- [X] T051 [US2] Добавить endpoint PATCH `/api/v1/books/{book_id}` в BookController (переименование)
+- [X] T052 [US2] Добавить endpoint DELETE `/api/v1/books/{book_id}` в BookController (удаление записи, файл не трогать)
+- [X] T053 [US2] Добавить endpoint GET `/api/v1/books/{book_id}/chunks` в BookController (получение чанков для чтения)
+- [X] T054 [US2] Добавить endpoints POST/GET `/api/v1/books/{book_id}/reading-position` в BookController
 
 #### Frontend — Компоненты библиотеки
-- [ ] T055 [P] [US2] Создать компонент BookCard в `frontend/src/components/BookCard.tsx` (отображение книги: обложка, название, автор, кнопки действий)
-- [ ] T056 [P] [US2] Создать компонент BookListView в `frontend/src/components/BookListView.tsx` (список книг в виде таблицы)
-- [ ] T057 [P] [US2] Создать компонент BookGridView в `frontend/src/components/BookGridView.tsx` (сетка карточек)
-- [ ] T058 [US2] Создать компонент ViewToggle в `frontend/src/components/ViewToggle.tsx` (переключение карточки/список)
-- [ ] T059 [US2] Создать страницу LibraryPage в `frontend/src/pages/LibraryPage.tsx` (основная страница: ViewToggle + BookGridView/BookListView, загрузка данных через React Query)
-- [ ] T060 [US2] Настроить React Query queries в `frontend/src/services/bookApi.ts` (getBooks, getBook, updateBook, deleteBook)
-- [ ] T061 [US2] Создать компонент RenameDialog в `frontend/src/components/RenameDialog.tsx` (модальное окно для переименования)
-- [ ] T062 [US2] Создать компонент ConfirmDialog в `frontend/src/components/ConfirmDialog.tsx` (подтверждение удаления)
+- [X] T055 [P] [US2] Создать компонент BookCard в `frontend/src/components/BookCard.tsx` (отображение книги: обложка, название, автор, кнопки действий)
+- [X] T056 [P] [US2] Создать компонент BookListView в `frontend/src/components/BookListView.tsx` (список книг в виде таблицы)
+- [X] T057 [P] [US2] Создать компонент BookGridView в `frontend/src/components/BookGridView.tsx` (сетка карточек)
+- [X] T058 [US2] Создать компонент ViewToggle в `frontend/src/components/ViewToggle.tsx` (переключение карточки/список)
+- [X] T059 [US2] Создать страницу LibraryPage в `frontend/src/pages/LibraryPage.tsx` (основная страница: ViewToggle + BookGridView/BookListView, загрузка данных через React Query)
+- [X] T060 [US2] Настроить React Query queries в `frontend/src/services/bookApi.ts` (getBooks, getBook, updateBook, deleteBook)
+- [X] T061 [US2] Создать компонент RenameDialog в `frontend/src/components/RenameDialog.tsx` (модальное окно для переименования)
+- [X] T062 [US2] Создать компонент ConfirmDialog в `frontend/src/components/ConfirmDialog.tsx` (подтверждение удаления)
 
 #### Frontend — Reader Page
-- [ ] T063 [US2] Создать страницу ReaderPage в `frontend/src/pages/ReaderPage.tsx` (режим чтения: загрузка чанков, вертикальная прокрутка, сохранение позиции)
-- [ ] T064 [US2] Создать hook useChunkLoader в `frontend/src/hooks/useChunkLoader.ts` (динамическая подгрузка видимых чанков ± 2 соседних, выгрузка невидимых)
-- [ ] T065 [US2] Создать компонент ReadingProgress в `frontend/src/components/ReadingProgress.tsx` (индикатор прогресса чтения)
+- [X] T063 [US2] Создать страницу ReaderPage в `frontend/src/pages/ReaderPage.tsx` (режим чтения: загрузка чанков, вертикальная прокрутка, сохранение позиции)
+- [X] T064 [US2] Создать hook useChunkLoader в `frontend/src/hooks/useChunkLoader.ts` (динамическая подгрузка видимых чанков ± 2 соседних, выгрузка невидимых)
+- [X] T065 [US2] Создать компонент ReadingProgress в `frontend/src/components/ReadingProgress.tsx` (индикатор прогресса чтения)
 
 **Checkpoint**: User Stories 1 AND 2 работают независимо
 
