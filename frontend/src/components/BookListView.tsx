@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BookDTO } from '../types/book';
 
 interface BookListViewProps {
@@ -70,6 +70,8 @@ export const BookListView: React.FC<BookListViewProps> = ({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {books.map((book) => {
+            const [coverLoaded, setCoverLoaded] = useState(false);
+            const [coverError, setCoverError] = useState(false);
             const coverUrl = book.cover_thumbnail_path
               ? `/api/v1/static/covers/${book.cover_thumbnail_path}`
               : '/default-cover.svg';
@@ -77,14 +79,22 @@ export const BookListView: React.FC<BookListViewProps> = ({
             return (
               <tr key={book.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <img
-                    src={coverUrl}
-                    alt={book.title}
-                    className="h-12 w-8 object-cover rounded"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/default-cover.svg';
-                    }}
-                  />
+                  <div className="relative w-10 h-12 bg-gray-200 rounded overflow-hidden">
+                    {!coverLoaded && (
+                      <div className="absolute inset-0 bg-gray-200 animate-pulse rounded" />
+                    )}
+                    <img
+                      src={coverError ? '/default-cover.svg' : coverUrl}
+                      alt={book.title}
+                      className={`w-full h-full object-cover rounded transition-opacity duration-300 ${coverLoaded ? 'opacity-100' : 'opacity-0'}`}
+                      loading="lazy"
+                      onLoad={() => setCoverLoaded(true)}
+                      onError={() => {
+                        setCoverError(true);
+                        setCoverLoaded(true);
+                      }}
+                    />
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900 truncate max-w-xs" title={book.title}>

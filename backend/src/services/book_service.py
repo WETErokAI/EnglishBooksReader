@@ -95,10 +95,12 @@ class BookService:
             thumbnail_path_str: Optional[str] = None
 
             if metadata.cover_data:
+                from app.config import settings
                 cover_path = generate_cover_path(book_id)
                 thumbnail_path = generate_thumbnail_path(book_id)
+                covers_base_path = Path(settings.COVERS_STORAGE_PATH)
                 cover_saved, thumb_saved = CoverProcessor.process_cover(
-                    metadata.cover_data, cover_path, thumbnail_path
+                    metadata.cover_data, cover_path, thumbnail_path, covers_base_path
                 )
                 cover_path_str = cover_saved
                 thumbnail_path_str = thumb_saved
