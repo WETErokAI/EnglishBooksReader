@@ -7,8 +7,6 @@
 - PATCH /api/v1/books/{book_id} — переименование книги
 - DELETE /api/v1/books/{book_id} — удаление книги
 - GET /api/v1/books/{book_id}/chunks — получение чанков
-- POST /api/v1/books/{book_id}/reading-position — сохранение позиции чтения
-- GET /api/v1/books/{book_id}/reading-position — получение позиции чтения
 """
 
 import pytest
@@ -382,57 +380,5 @@ class TestBookChunks:
         """Получение чанков для несуществующей книги."""
         fake_id = uuid4()
         response = client.get(f"/api/v1/books/{fake_id}/chunks")
-        
-        assert response.status_code == 404
-
-
-class TestReadingPosition:
-    """Тесты позиции чтения."""
-
-    def test_save_and_get_position(self, client: TestClient, sample_books):
-        """Сохранение и получение позиции чтения."""
-        book = sample_books[0]
-        chunk_id = uuid4()
-        
-        # Сохраняем позицию
-        save_response = client.post(
-            f"/api/v1/books/{book.id}/reading-position",
-            json={
-                "chunk_id": str(chunk_id),
-                "offset": 1250,
-                "timestamp": "2026-04-08T15:45:00Z",
-            },
-        )
-        assert save_response.status_code == 200
-        
-        # Получаем позицию
-        get_response = client.get(f"/api/v1/books/{book.id}/reading-position")
-        assert get_response.status_code == 200
-        data = get_response.json()
-        assert data["chunk_id"] == str(chunk_id)
-        assert data["offset"] == 1250
-
-    def test_get_position_not_found(self, client: TestClient):
-        """Получение позиции для книги без позиции."""
-        book_id = uuid4()
-        response = client.get(f"/api/v1/books/{book_id}/reading-position")
-        
-        # Должно вернуть 404 или пустой ответ
-        assert response.status_code in (200, 404)
-        if response.status_code == 200:
-            data = response.json()
-            assert data.get("chunk_id") is None or data["chunk_id"] is None
-
-    def test_save_position_book_not_found(self, client: TestClient):
-        """Сохранение позиции для несуществующей книги."""
-        fake_id = uuid4()
-        response = client.post(
-            f"/api/v1/books/{fake_id}/reading-position",
-            json={
-                "chunk_id": str(uuid4()),
-                "offset": 0,
-                "timestamp": "2026-04-08T15:45:00Z",
-            },
-        )
         
         assert response.status_code == 404

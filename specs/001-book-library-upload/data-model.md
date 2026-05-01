@@ -22,7 +22,6 @@
 | `cover_image_path` | String(1000) | Путь к файлу обложки (если извлечена) | Nullable, valid image path |
 | `cover_thumbnail_path` | String(1000) | Путь к миниатюре обложки для карточек | Nullable, valid image path |
 | `date_added` | DateTime | Дата и время добавления в библиотеку | Required, auto-set on create |
-| `last_reading_position` | JSON | Позиция последнего чтения | Nullable, `{chunk_id: str, offset: int, timestamp: datetime}` |
 | `chunks` | Relationship | Коллекция чанков книги (one-to-many) | Lazy loaded |
 | `is_duplicate` | Boolean | Флаг дубликата (для валидации) | Computed field, not persisted |
 
@@ -41,6 +40,31 @@
 **Indexes**:
 - Index на `(title, author)` для быстрого поиска дубликатов
 - Full-text index на `title` и `author` для поиска по библиотеке
+
+---
+
+### ReadingPosition (Позиция чтения)
+
+Хранит позицию последнего чтения для конкретной книги. Вынесена в отдельную таблицу, чтобы избежать постоянных перезаписей записей `Book` при каждом обновлении позиции чтения. В проекте один пользователь, поэтому таблица не содержит `user_id`.
+
+**Fields**:
+
+| Поле | Тип | Описание | Validation |
+|------|-----|----------|------------|
+| `id` | UUID | Уникальный идентификатор записи | Primary key, auto-generated |
+| `book_id` | UUID | Внешний ключ на Book | Required, foreign key, unique |
+| `chunk_id` | UUID | Идентификатор последнего прочитанного чанка | Required |
+| `offset` | Integer | Смещение внутри чанка (позиция в тексте) | Required, >= 0 |
+| `last_read_at` | DateTime | Время последнего обновления позиции | Required, auto-set on update |
+
+**Validation Rules**:
+- `book_id` должен быть уникальным — одна позиция на книгу
+- `offset` не может быть отрицательным
+- `last_read_at` обновляется при каждом вызове `save_position`
+
+**Relationships**:
+- One-to-one с `Book` (одна позиция на одну книгу)
+- Индекс по `book_id` для быстрого поиска
 
 ---
 

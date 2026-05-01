@@ -13,7 +13,6 @@ export interface BookDTO {
   file_format: FileFormat;
   cover_thumbnail_path: string | null;
   date_added: string; // ISO datetime
-  has_reading_position: boolean;
 }
 
 /** DTO для списка книг с пагинацией */
@@ -33,16 +32,10 @@ export interface BookChunksResponse {
 
 /** DTO для чанка книги */
 export interface BookChunkDTO {
+  id: string; // UUID чанка
   chunk_index: number;
   content_html: string;
   word_count: number;
-}
-
-/** Позиция чтения */
-export interface ReadingPosition {
-  chunk_id: string;
-  offset: number;
-  timestamp: string; // ISO datetime
 }
 
 /** Ответ с ошибкой от API */

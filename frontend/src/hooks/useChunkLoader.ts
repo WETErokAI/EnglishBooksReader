@@ -1,18 +1,18 @@
 /**
- * Хук для динамической подгрузки чанков книги.
+ * Хук для загрузки чанков книги.
  *
- * Подгружает видимые чанки ± 2 соседних,
- * выгружает невидимые для оптимизации памяти.
+ * Функциональность:
+ * - Загружает ВСЕ чанки сразу
+ * - Показывает все чанки в DOM (скролл-бар рассчитывается по всей книге)
+ * - IntersectionObserver отслеживает текущий чанк для прогресса
  */
 
-import { useEffect, useState, useCallback } from 'react';
-import { useGetBookChunks, useGetReadingPosition, useSaveReadingPosition } from '../services/bookApi';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useGetBookChunks } from '../services/bookApi';
 import type { BookChunkDTO } from '../types/book';
 
 interface UseChunkLoaderOptions {
   bookId: string;
-  chunkSize?: number; // Размер "окна" видимых чанков (по умолчанию 5)
-  neighborCount?: number; // Количество соседних чанков (по умолчанию 2)
 }
 
 interface UseChunkLoaderReturn {
@@ -22,92 +22,64 @@ interface UseChunkLoaderReturn {
   error: Error | null;
   // Позиция чтения
   currentChunkIndex: number;
+  scrollOffset: number; // Скролл внутри текущего чанка
   // Навигация
   goToChunk: (index: number) => void;
-  // Автосохранение позиции
-  savePosition: (chunkIndex: number, offset: number) => void;
+  getChunkIdByIndex: (index: number) => string | null;
 }
 
 export function useChunkLoader({
   bookId,
-  neighborCount = 2,
 }: UseChunkLoaderOptions): UseChunkLoaderReturn {
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
+  const [scrollOffset, setScrollOffset] = useState(0);
   const [savedChunks, setSavedChunks] = useState<Map<number, BookChunkDTO>>(new Map());
 
-  // Получаем позицию чтения
-  const { data: positionData } = useGetReadingPosition(bookId);
+  // Mapping chunk_index → chunk_id (UUID чанка)
+  const chunkIdMappingRef = useRef<Map<number, string>>(new Map());
 
-  // Устанавливаем начальную позицию из сохранённой
+  // Сброс маппинга чанков и состояния при смене bookId
   useEffect(() => {
-    if (positionData?.chunk_id) {
-      // chunk_id — это UUID чанка, но у нас есть chunk_index
-      // В реальном приложении нужно мапить UUID → chunk_index
-      // Для простоты используем offset как chunk_index
-      if (positionData.offset >= 0) {
-        setCurrentChunkIndex(positionData.offset);
-      }
-    }
-  }, [positionData]);
+    console.log('[ChunkLoader] 🔄 Сброс chunkIdMappingRef при смене bookId:', bookId);
+    chunkIdMappingRef.current = new Map();
+    setSavedChunks(new Map());
+    setCurrentChunkIndex(0);
+    setScrollOffset(0);
+  }, [bookId]);
 
-  // Вычисляем диапазон чанков для загрузки
-  const fromChunk = Math.max(0, currentChunkIndex - neighborCount);
-  const toChunk = currentChunkIndex + neighborCount;
-
-  // Загружаем чанки
+  // Загружаем ВСЕ чанки сразу
   const { data, isLoading, error } = useGetBookChunks(bookId, {
-    from_chunk: fromChunk,
-    to_chunk: toChunk,
+    from_chunk: 0,
+    to_chunk: 999999, // Загружаем все чанки
   });
 
-  // Сохраняем загруженные чанки
+  // Сохраняем загруженные чанки и строим chunk_id маппинг
   useEffect(() => {
-    if (data?.chunks) {
-      setSavedChunks((prev) => {
-        const next = new Map(prev);
-        for (const chunk of data.chunks) {
-          next.set(chunk.chunk_index, chunk);
-        }
-        return next;
-      });
-    }
-  }, [data]);
+    if (!data?.chunks) return;
 
-  // Очищаем старые чанки (за пределами видимости)
-  useEffect(() => {
     setSavedChunks((prev) => {
       const next = new Map(prev);
-      const minIndex = Math.max(0, currentChunkIndex - neighborCount - 5);
-      const maxIndex = currentChunkIndex + neighborCount + 5;
 
-      for (const key of next.keys()) {
-        if (key < minIndex || key > maxIndex) {
-          next.delete(key);
-        }
+      // Слияние новых чанков и построение маппинга
+      for (const chunk of data.chunks) {
+        next.set(chunk.chunk_index, chunk);
+        chunkIdMappingRef.current.set(chunk.chunk_index, chunk.id);
       }
+
       return next;
     });
-  }, [currentChunkIndex, neighborCount]);
+  }, [data]);
 
   // Переход к конкретному чанку
   const goToChunk = useCallback((index: number) => {
     setCurrentChunkIndex(index);
+    setScrollOffset(0); // Сбрасываем скролл при переходе к новому чанку
   }, []);
 
-  // Сохранение позиции
-  const savePositionMutation = useSaveReadingPosition();
-
-  const savePosition = useCallback(
-    (chunkIndex: number, offset: number) => {
-      savePositionMutation.mutate({
-        bookId,
-        chunk_id: `chunk-${chunkIndex}`, // Временно используем chunk_index
-        offset,
-        timestamp: new Date().toISOString(),
-      });
-    },
-    [bookId, savePositionMutation]
-  );
+  // Получение chunk_id по chunk_index
+  const getChunkIdByIndex = useCallback((index: number): string | null => {
+    return chunkIdMappingRef.current.get(index) || null;
+  }, []);
 
   // Собираем чанки в порядке индексов
   const chunks = Array.from(savedChunks.values()).sort(
@@ -120,7 +92,8 @@ export function useChunkLoader({
     isLoading,
     error: error instanceof Error ? error : null,
     currentChunkIndex,
+    scrollOffset,
     goToChunk,
-    savePosition,
+    getChunkIdByIndex,
   };
 }

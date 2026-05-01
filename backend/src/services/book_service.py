@@ -10,6 +10,7 @@ BookService — бизнес-логика загрузки книг.
 6. Проверка на дубликаты
 """
 
+import logging
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -17,6 +18,8 @@ from datetime import datetime
 
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from src.models.book import Book, BookChunk
 from src.schemas.book import BookDTO
@@ -121,18 +124,30 @@ class BookService:
 
             # 8. Чанкинг контента (для epub/fb2) — ДО удаления временного файла
             if file_format in ("epub", "fb2"):
+                logger.info(f"Начинаю чанкинг для книги {book.id}, формат={file_format}")
                 html_content = self._extract_html_content(tmp_path, file_format, content)
                 if html_content:
-                    chunks = self.chunking_service.chunk_html_content(html_content)
-                    for chunk_data in chunks:
-                        chunk = BookChunk(
-                            book_id=book.id,
-                            chunk_index=chunk_data["chunk_index"],
-                            content_html=chunk_data["content_html"],
-                            word_count=chunk_data["word_count"],
-                        )
-                        self.db.add(chunk)
-                    self.db.commit()
+                    logger.info(f"HTML контент извлечён, длина={len(html_content)} символов")
+                    try:
+                        chunks = self.chunking_service.chunk_html_content(html_content)
+                        logger.info(f"Создано чанков: {len(chunks)}")
+                        for chunk_data in chunks:
+                            chunk = BookChunk(
+                                book_id=book.id,
+                                chunk_index=chunk_data["chunk_index"],
+                                content_html=chunk_data["content_html"],
+                                word_count=chunk_data["word_count"],
+                            )
+                            self.db.add(chunk)
+                        self.db.commit()
+                        logger.info(f"Чанки сохранены в БД для книги {book.id}")
+                    except Exception as e:
+                        logger.error(f"Ошибка при сохранении чанков: {e}", exc_info=True)
+                        self.db.rollback()
+                else:
+                    logger.warning(f"HTML контент не извлечён для книги {book.id}, чанки не созданы")
+            else:
+                logger.info(f"Формат {file_format} — чанкинг пропускается")
 
         except ValueError as e:
             raise HTTPException(status_code=422, detail=str(e))
@@ -177,10 +192,14 @@ class BookService:
                 from ebooklib import epub
                 book = epub.read_epub(str(file_path))
                 html_parts = []
-                for item in book.get_items_of_type(epub.ITEM_DOCUMENT):
-                    html_parts.append(item.get_content().decode("utf-8", errors="ignore"))
+                # Фильтруем по типу EpubHtml — надёжно независимо от версии ebooklib
+                for item in book.get_items():
+                    if isinstance(item, epub.EpubHtml):
+                        html_parts.append(item.get_content().decode("utf-8", errors="ignore"))
+                logger.info(f"Извлечено {len(html_parts)} HTML-документов из EPUB")
                 return "\n".join(html_parts) if html_parts else None
-            except Exception:
+            except Exception as e:
+                logger.error(f"Ошибка при чтении EPUB: {e}", exc_info=True)
                 return None
         elif file_format == "fb2":
             try:
@@ -205,5 +224,4 @@ class BookService:
             file_format=book.file_format,
             cover_thumbnail_path=book.cover_thumbnail_path,
             date_added=book.date_added,
-            has_reading_position=book.last_reading_position is not None,
         )

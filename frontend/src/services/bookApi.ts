@@ -9,8 +9,6 @@
  * - updateBook: мутация обновления книги
  * - deleteBook: мутация удаления книги
  * - getBookChunks: query для получения чанков
- * - saveReadingPosition: мутация сохранения позиции
- * - getReadingPosition: query для получения позиции
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,7 +18,6 @@ import type {
   BookListDTO,
   BookUpdate,
   BookChunksResponse,
-  ReadingPosition,
   GetBooksParams,
 } from '../types/book';
 
@@ -111,41 +108,6 @@ export function useGetBookChunks(bookId: string, range?: { from_chunk?: number; 
   return useQuery({
     queryKey: ['book-chunks', bookId, range],
     queryFn: () => fetchBookChunks(bookId, range),
-    enabled: !!bookId,
-  });
-}
-
-// ===== Save Reading Position Mutation =====
-
-interface SavePositionParams {
-  bookId: string;
-  chunk_id: string;
-  offset: number;
-  timestamp: string;
-}
-
-async function saveReadingPositionApi(params: SavePositionParams): Promise<void> {
-  const { bookId, ...data } = params;
-  await apiClient.post(`/books/${bookId}/reading-position`, data);
-}
-
-export function useSaveReadingPosition() {
-  return useMutation({
-    mutationFn: saveReadingPositionApi,
-  });
-}
-
-// ===== Get Reading Position Query =====
-
-async function fetchReadingPosition(bookId: string): Promise<ReadingPosition> {
-  const response = await apiClient.get<ReadingPosition>(`/books/${bookId}/reading-position`);
-  return response.data;
-}
-
-export function useGetReadingPosition(bookId: string | null) {
-  return useQuery({
-    queryKey: ['reading-position', bookId],
-    queryFn: () => fetchReadingPosition(bookId!),
     enabled: !!bookId,
   });
 }

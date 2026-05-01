@@ -32,12 +32,12 @@ def db_session():
     """Создать тестовую сессию БД (SQLite in-memory)."""
     # Заменяем UUID типы на совместимые с SQLite на уровне таблицы
     from src.models.book import Book, BookChunk
-    
+
     # Обновляем типы в таблицах
     Book.__table__.c['id'].type = SQLiteUUID()
     BookChunk.__table__.c['id'].type = SQLiteUUID()
     BookChunk.__table__.c['book_id'].type = SQLiteUUID()
-    
+
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},

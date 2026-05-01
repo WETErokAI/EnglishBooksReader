@@ -41,7 +41,6 @@ class BookDTO(BaseModel):
     file_format: str
     cover_thumbnail_path: Optional[str]
     date_added: datetime
-    has_reading_position: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -58,6 +57,7 @@ class BookListDTO(BaseModel):
 class BookChunkDTO(BaseModel):
     """DTO для отображения чанка книги."""
 
+    id: UUID
     chunk_index: int
     content_html: str
     word_count: int
@@ -71,25 +71,3 @@ class BookChunksResponse(BaseModel):
     book_id: UUID
     chunks: list[BookChunkDTO]
     total_chunks: int
-
-
-class ReadingPositionSave(BaseModel):
-    """Схема для сохранения позиции чтения."""
-
-    chunk_id: UUID
-    offset: int = Field(ge=0)
-    timestamp: datetime
-
-
-class ReadingPositionResponse(BaseModel):
-    """Схема для ответа с позицией чтения."""
-
-    chunk_id: Optional[UUID] = None
-    offset: int = 0
-    timestamp: Optional[str] = None
-
-
-class ReadingPositionSuccessResponse(BaseModel):
-    """Схема для успешного сохранения позиции."""
-
-    success: bool = True

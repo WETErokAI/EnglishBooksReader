@@ -4,7 +4,10 @@
       "Bash(mkdir *)",
       "Bash(conda *)",
       "Bash(npx *)",
-      "Bash(pytest *)"
+      "Bash(pytest *)",
+      "Bash(curl *)",
+      "Bash(findstr *)",
+      "Bash(dir *)"
     ]
   },
   "$version": 3

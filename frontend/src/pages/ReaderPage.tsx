@@ -1,19 +1,35 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { List, useDynamicRowHeight } from 'react-window';
+import { AutoSizer } from 'react-virtualized-auto-sizer';
 import { useGetBook } from '../services/bookApi';
 import { useChunkLoader } from '../hooks/useChunkLoader';
 import { ReadingProgress } from '../components/ReadingProgress';
+import { VirtualChunkRow } from '../components/VirtualChunkRow';
+
+const ESTIMATED_CHUNK_HEIGHT = 600;
 
 /**
- * Страница чтения книги.
- * Загружает чанки динамически, позволяет читать с вертикальной прокруткой
- * и сохраняет позицию чтения.
+ * Страница чтения книги с виртуализированным скроллом.
+ *
+ * Функциональность:
+ * - Виртуализация чанков через react-window v2 List
+ * - Переменные высоты чанков через useDynamicRowHeight
+ * - В DOM только видимые чанки (+ небольшой буфер)
+ * - Навигация между чанками (стрелки, скролл-бар)
+ * - IntersectionObserver для определения активного чанка
+ *
+ * NOTE: Сохранение позиции чтения перенесено на будущую реализацию.
  */
 export const ReaderPage: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const listApiRef = useRef<{
+    element: HTMLDivElement | null;
+    scrollToRow: (config: { align?: 'auto' | 'center' | 'end' | 'start' | 'smart'; behavior?: 'auto' | 'smooth' | 'instant'; index: number }) => void;
+  }>({ element: null, scrollToRow: () => {} });
   const chunkRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
 
   if (!bookId) {
     return (
@@ -23,10 +39,8 @@ export const ReaderPage: React.FC = () => {
     );
   }
 
-  // Загружаем информацию о книге
   const { data: book, isLoading: bookLoading } = useGetBook(bookId);
 
-  // Загружаем чанки
   const {
     chunks,
     totalChunks,
@@ -34,36 +48,36 @@ export const ReaderPage: React.FC = () => {
     error,
     currentChunkIndex,
     goToChunk,
-    savePosition,
   } = useChunkLoader({ bookId });
 
-  // Автосохранение позиции при изменении чанка
-  useEffect(() => {
-    if (totalChunks > 0) {
-      savePosition(currentChunkIndex, 0);
+  // Хук для переменных высот строк (react-window v2)
+  const rowHeight = useDynamicRowHeight({ defaultRowHeight: ESTIMATED_CHUNK_HEIGHT });
+
+  // Регистрация DOM-элемента чанка
+  const registerChunkRef = useCallback((el: HTMLDivElement | null, index: number) => {
+    if (el) {
+      chunkRefs.current.set(index, el);
+    } else {
+      chunkRefs.current.delete(index);
     }
-  }, [currentChunkIndex, totalChunks, savePosition]);
+  }, []);
 
-  // Обработка видимости чанков через Intersection Observer
+  // Intersection Observer для отслеживания видимого чанка
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
             const chunkIndex = Number(entry.target.getAttribute('data-chunk-index'));
-            if (!isNaN(chunkIndex) && chunkIndex !== currentChunkIndex) {
+            if (!isNaN(chunkIndex) && chunkIndex !== currentChunkIndex && !isKeyboardNavigation) {
               goToChunk(chunkIndex);
             }
           }
         }
       },
-      { root: container, threshold: 0.5 }
+      { root: null, threshold: 0.3 }
     );
 
-    // Наблюдаем за всеми чанками
     chunkRefs.current.forEach((el) => {
       if (el.parentNode) {
         observer.observe(el);
@@ -71,20 +85,35 @@ export const ReaderPage: React.FC = () => {
     });
 
     return () => observer.disconnect();
-  }, [chunks, currentChunkIndex, goToChunk]);
+  }, [chunks.length, currentChunkIndex, goToChunk, isKeyboardNavigation]);
 
-  // Обработка клавиш навигации
+  // Наблюдаем за DOM-элементами строк для измерения высоты (react-window v2)
+  useEffect(() => {
+    const elements = Array.from(chunkRefs.current.values());
+    if (elements.length === 0) return;
+
+    const cleanup = rowHeight.observeRowElements(elements);
+    return cleanup;
+  }, [chunks.length, rowHeight]);
+
+  // Клавиатурная навигация
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         e.preventDefault();
+        setIsKeyboardNavigation(true);
         if (currentChunkIndex < totalChunks - 1) {
-          goToChunk(currentChunkIndex + 1);
+          const nextIndex = currentChunkIndex + 1;
+          goToChunk(nextIndex);
+          listApiRef.current?.scrollToRow({ index: nextIndex, align: 'start', behavior: 'smooth' });
         }
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         e.preventDefault();
+        setIsKeyboardNavigation(true);
         if (currentChunkIndex > 0) {
-          goToChunk(currentChunkIndex - 1);
+          const prevIndex = currentChunkIndex - 1;
+          goToChunk(prevIndex);
+          listApiRef.current?.scrollToRow({ index: prevIndex, align: 'start', behavior: 'smooth' });
         }
       } else if (e.key === 'Escape') {
         navigate('/library');
@@ -93,13 +122,36 @@ export const ReaderPage: React.FC = () => {
     [currentChunkIndex, totalChunks, goToChunk, navigate]
   );
 
-  // Прокрутка к текущему чанку
+  // Сброс флага клавиатурной навигации
   useEffect(() => {
-    const chunkEl = chunkRefs.current.get(currentChunkIndex);
-    if (chunkEl && scrollContainerRef.current) {
-      chunkEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [currentChunkIndex]);
+    if (!isKeyboardNavigation) return;
+
+    const resetId = setTimeout(() => {
+      setIsKeyboardNavigation(false);
+    }, 600);
+
+    return () => clearTimeout(resetId);
+  }, [currentChunkIndex, isKeyboardNavigation]);
+
+  // Row renderer для List
+  const renderRow = useCallback(({ index, style, ariaAttributes: _ariaAttributes }: {
+    index: number;
+    style: React.CSSProperties;
+    ariaAttributes: { 'aria-posinset': number; 'aria-setsize': number; role: 'listitem' };
+  }) => {
+    const chunk = chunks[index];
+    if (!chunk) return null;
+
+    return (
+      <VirtualChunkRow
+        style={style}
+        chunkIndex={chunk.chunk_index}
+        contentHtml={chunk.content_html}
+        isActive={chunk.chunk_index === currentChunkIndex}
+        registerRef={registerChunkRef}
+      />
+    );
+  }, [chunks, currentChunkIndex, registerChunkRef]);
 
   if (bookLoading || isLoading) {
     return (
@@ -143,11 +195,6 @@ export const ReaderPage: React.FC = () => {
             )}
           </div>
         </div>
-
-        {/* Progress indicator */}
-        <div className="text-sm text-gray-500">
-          Глава {currentChunkIndex + 1} / {totalChunks}
-        </div>
       </header>
 
       {/* Reading Progress Bar */}
@@ -155,37 +202,23 @@ export const ReaderPage: React.FC = () => {
         <ReadingProgress
           currentChunk={currentChunkIndex}
           totalChunks={totalChunks}
-          onChunkChange={goToChunk}
         />
       </div>
 
-      {/* Content */}
-      <div
-        ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto bg-gray-50 px-4 py-6"
-      >
-        <div className="max-w-3xl mx-auto space-y-6">
-          {chunks.map((chunk) => (
-            <div
-              key={chunk.chunk_index}
-              ref={(el) => {
-                if (el) {
-                  chunkRefs.current.set(chunk.chunk_index, el);
-                }
-              }}
-              data-chunk-index={chunk.chunk_index}
-              className="bg-white rounded-lg shadow-sm p-8 prose prose-lg max-w-none"
-              dangerouslySetInnerHTML={{ __html: chunk.content_html }}
+      {/* Virtualized Content */}
+      <div className="flex-1 overflow-hidden bg-gray-50">
+        <AutoSizer
+          renderProp={({ width, height }) => (
+            <List
+              style={{ width, height }}
+              rowCount={totalChunks}
+              rowHeight={rowHeight}
+              listRef={listApiRef}
+              rowComponent={renderRow}
+              rowProps={{}}
             />
-          ))}
-
-          {/* Loading indicator для подгрузки */}
-          {isLoading && (
-            <div className="text-center py-4">
-              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-            </div>
           )}
-        </div>
+        />
       </div>
     </div>
   );

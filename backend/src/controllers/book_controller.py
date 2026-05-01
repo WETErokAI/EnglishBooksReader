@@ -9,8 +9,6 @@ Endpoints:
 - PATCH /api/v1/books/{book_id} — переименование
 - DELETE /api/v1/books/{book_id} — удаление
 - GET /api/v1/books/{book_id}/chunks — получение чанков
-- POST /api/v1/books/{book_id}/reading-position — сохранение позиции
-- GET /api/v1/books/{book_id}/reading-position — получение позиции
 """
 
 from typing import Optional
@@ -21,7 +19,6 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from src.services.book_service import BookService
-from src.services.reading_position_service import ReadingPositionService
 from src.repositories.book_repository import BookRepository
 from src.schemas.book import (
     BookDTO,
@@ -29,9 +26,6 @@ from src.schemas.book import (
     BookUpdate,
     BookChunksResponse,
     BookChunkDTO,
-    ReadingPositionSave,
-    ReadingPositionResponse,
-    ReadingPositionSuccessResponse,
 )
 
 router = APIRouter(prefix="/books", tags=["books"])
@@ -285,92 +279,26 @@ def get_book_chunks(
     Raises:
         HTTPException: Если книга не найдена.
     """
-    from src.models.book import Book
+    from src.models.book import Book, BookChunk
 
     repository = BookRepository(db)
     book = repository.get_by_id(book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Книга не найдена")
 
-    # Загружаем чанки с опциональным диапазоном
-    query = db.query(Book).filter(Book.id == book_id)
-    chunks = book.chunks
-
-    if from_chunk is not None and to_chunk is not None:
-        chunks = [c for c in chunks if from_chunk <= c.chunk_index <= to_chunk]
-    elif from_chunk is not None:
-        chunks = [c for c in chunks if c.chunk_index >= from_chunk]
-    elif to_chunk is not None:
-        chunks = [c for c in chunks if c.chunk_index <= to_chunk]
+    # Загружаем чанки с фильтрацией на уровне SQL
+    chunks_query = db.query(BookChunk).filter(
+        BookChunk.book_id == book_id
+    )
+    if from_chunk is not None:
+        chunks_query = chunks_query.filter(BookChunk.chunk_index >= from_chunk)
+    if to_chunk is not None:
+        chunks_query = chunks_query.filter(BookChunk.chunk_index <= to_chunk)
+    chunks_query = chunks_query.order_by(BookChunk.chunk_index)
+    chunks = chunks_query.all()
 
     return BookChunksResponse(
         book_id=book_id,
         chunks=[BookChunkDTO.model_validate(c) for c in chunks],
         total_chunks=len(book.chunks),
-    )
-
-
-@router.post(
-    "/{book_id}/reading-position",
-    response_model=ReadingPositionSuccessResponse,
-    summary="Сохранить позицию чтения",
-    responses={404: {"description": "Книга не найдена"}},
-)
-def save_reading_position(
-    book_id: UUID,
-    position: ReadingPositionSave,
-    db: Session = Depends(get_db),
-) -> ReadingPositionSuccessResponse:
-    """Сохранить позицию чтения для книги.
-
-    Args:
-        book_id: UUID книги.
-        position: Данные позиции чтения.
-        db: Сессия базы данных.
-
-    Returns:
-        ReadingPositionSuccessResponse.
-
-    Raises:
-        HTTPException: Если книга не найдена.
-    """
-    repository = BookRepository(db)
-    service = ReadingPositionService(db, repository)
-
-    success = service.save_position(book_id, position.chunk_id, position.offset, position.timestamp)
-    if not success:
-        raise HTTPException(status_code=404, detail="Книга не найдена")
-
-    return ReadingPositionSuccessResponse()
-
-
-@router.get(
-    "/{book_id}/reading-position",
-    response_model=ReadingPositionResponse,
-    summary="Получить позицию чтения",
-)
-def get_reading_position(
-    book_id: UUID,
-    db: Session = Depends(get_db),
-) -> ReadingPositionResponse:
-    """Получить сохранённую позицию чтения.
-
-    Args:
-        book_id: UUID книги.
-        db: Сессия базы данных.
-
-    Returns:
-        ReadingPositionResponse с данными позиции.
-    """
-    repository = BookRepository(db)
-    service = ReadingPositionService(db, repository)
-
-    position = service.get_position(book_id)
-    if not position:
-        return ReadingPositionResponse(chunk_id=None, offset=0)
-
-    return ReadingPositionResponse(
-        chunk_id=UUID(position["chunk_id"]),
-        offset=position["offset"],
-        timestamp=position["timestamp"],
     )
