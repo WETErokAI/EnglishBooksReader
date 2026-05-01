@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGetBooks, useUpdateBook, useDeleteBook } from '../services/bookApi';
 import { ViewToggle, ViewMode } from '../components/ViewToggle';
@@ -6,6 +6,8 @@ import { BookGridView } from '../components/BookGridView';
 import { BookListView } from '../components/BookListView';
 import { RenameDialog } from '../components/RenameDialog';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { SearchBar } from '../components/SearchBar';
+import { NoResultsMessage } from '../components/NoResultsMessage';
 import type { BookDTO } from '../types/book';
 
 /**
@@ -89,10 +91,18 @@ export const LibraryPage: React.FC = () => {
     });
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    setPage(1); // Reset to first page on new search
-  };
+  const handleSearchChange = useCallback(
+    (newSearch: string) => {
+      setSearch(newSearch);
+      setPage(1); // Reset to first page on new search
+    },
+    [],
+  );
+
+  const handleClearSearch = useCallback(() => {
+    setSearch('');
+    setPage(1);
+  }, []);
 
   return (
     <div className="library-page">
@@ -102,14 +112,7 @@ export const LibraryPage: React.FC = () => {
 
         <div className="flex items-center gap-4 w-full sm:w-auto">
           {/* Search */}
-          <input
-            type="text"
-            placeholder="Поиск по названию или автору..."
-            value={search}
-            onChange={handleSearchChange}
-            className="flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            aria-label="Поиск книг"
-          />
+          <SearchBar value={search} onChange={handleSearchChange} />
 
           {/* View Toggle */}
           <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
@@ -139,19 +142,19 @@ export const LibraryPage: React.FC = () => {
 
       {/* Empty State */}
       {!isLoading && !error && books.length === 0 && (
-        <div className="text-center py-16">
-          <p className="text-gray-500 text-lg mb-4">
-            {search ? 'Ничего не найдено' : 'Библиотека пуста'}
-          </p>
-          {!search && (
+        search ? (
+          <NoResultsMessage searchQuery={search} onClear={handleClearSearch} />
+        ) : (
+          <div className="text-center py-16">
+            <p className="text-gray-500 text-lg mb-4">Библиотека пуста</p>
             <button
               onClick={() => navigate('/upload')}
               className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md transition-colors"
             >
               Загрузить книгу
             </button>
-          )}
-        </div>
+          </div>
+        )
       )}
 
       {/* Books Grid/List */}

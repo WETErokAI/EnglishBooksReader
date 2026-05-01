@@ -153,19 +153,19 @@
 
 ### Тесты для User Story 3 (TDD — писать ДО кода) ⚠️
 
-- [ ] T066 [P] [US3] Unit-тест BookRepository search method в `backend/tests/unit/test_book_repository_search.py` (совпадения по title, author, без результатов, очистка поиска)
-- [ ] T067 [US3] Интеграционный тест search endpoint в `backend/tests/integration/test_book_search.py` (параметр search, пагинация с поиском)
+- [X] T066 [P] [US3] Unit-тест BookRepository search method в `backend/tests/unit/test_book_repository_search.py` (совпадения по title, author, без результатов, очистка поиска)
+- [X] T067 [US3] Интеграционный тест search endpoint в `backend/tests/integration/test_book_search.py` (параметр search, пагинация с поиском)
 
 ### Реализация для User Story 3
 
 #### Backend
-- [ ] T068 [US3] Реализовать метод search в BookRepository (`backend/src/repositories/book_repository.py`) — SQL запрос с ILIKE по title и author, индексация для производительности
+- [X] T068 [US3] Реализовать метод search в BookRepository (`backend/src/repositories/book_repository.py`) — SQL запрос с ILIKE по title и author, индексация для производительности
 
 #### Frontend
-- [ ] T069 [P] [US3] Создать компонент SearchBar в `frontend/src/components/SearchBar.tsx` (поисковая строка с debounce 300ms)
-- [ ] T070 [P] [US3] Создать компонент NoResultsMessage в `frontend/src/components/NoResultsMessage.tsx` (сообщение "Ничего не найдено")
-- [ ] T071 [US3] Интегрировать SearchBar в LibraryPage в `frontend/src/pages/LibraryPage.tsx` (фильтрация через React Query с параметром search)
-- [ ] T072 [US3] Обновить React Query query в `frontend/src/services/bookApi.ts` (getBooks с параметром search)
+- [X] T069 [P] [US3] Создать компонент SearchBar в `frontend/src/components/SearchBar.tsx` (поисковая строка с debounce 300ms)
+- [X] T070 [P] [US3] Создать компонент NoResultsMessage в `frontend/src/components/NoResultsMessage.tsx` (сообщение "Ничего не найдено")
+- [X] T071 [US3] Интегрировать SearchBar в LibraryPage в `frontend/src/pages/LibraryPage.tsx` (фильтрация через React Query с параметром search)
+- [X] T072 [US3] Обновить React Query query в `frontend/src/services/bookApi.ts` (getBooks с параметром search)
 
 **Checkpoint**: Все user stories работают независимо
 
