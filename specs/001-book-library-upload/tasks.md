@@ -122,7 +122,7 @@
 - [X] T049 [US2] Добавить endpoint GET `/api/v1/books` в BookController (с пагинацией и поиском)
 - [X] T050 [US2] Добавить endpoint GET `/api/v1/books/{book_id}` в BookController
 - [X] T051 [US2] Добавить endpoint PATCH `/api/v1/books/{book_id}` в BookController (переименование)
-- [X] T052 [US2] Добавить endpoint DELETE `/api/v1/books/{book_id}` в BookController (удаление записи, файл не трогать)
+- [X] T052 [US2] Добавить endpoint DELETE `/api/v1/books/{book_id}` в BookController (удаление записи, файл в storage удаляется)
 - [X] T053 [US2] Добавить endpoint GET `/api/v1/books/{book_id}/chunks` в BookController (получение чанков для чтения)
 
 
@@ -175,16 +175,16 @@
 
 **Purpose**: Улучшения, затрагивающие несколько user stories
 
-- [ ] T073 [P] Создать компонент ErrorBoundary в `frontend/src/components/ErrorBoundary.tsx` (обработка ошибок рендеринга)
-- [ ] T074 [P] Создать компонент LoadingSpinner в `frontend/src/components/LoadingSpinner.tsx` (индикатор загрузки)
-- [ ] T075 [P] Создать компонент ToastNotification в `frontend/src/components/ToastNotification.tsx` (уведомления об ошибках/успехе)
-- [ ] T076 Настроить React Router в `frontend/src/App.tsx` (маршруты: /, /upload, /books/:id/read)
-- [ ] T077 Добавить placeholder image для книг без обложки в `frontend/public/default-cover.svg`
-- [ ] T078 [P] Написать E2E тесты в `tests/e2e/test_upload_and_read_flow.spec.ts` (Playwright: загрузка → просмотр → чтение)
-- [ ] T079 [P] Написать E2E тесты в `tests/e2e/test_library_management.spec.ts` (Playwright: переименование, удаление, поиск)
-- [ ] T080 Задокументировать API в `backend/README.md` (ссылки на contracts, примеры использования)
-- [ ] T081 Запустить quickstart.md validation — проверить, что приложение запускается согласно инструкции
-- [ ] T082 Финальный запуск всех тестов: `cd backend && pytest` + `cd frontend && npm test`
+- [X] T073 [P] Создать компонент ErrorBoundary в `frontend/src/components/ErrorBoundary.tsx` (обработка ошибок рендеринга)
+- [X] T074 [P] Создать компонент LoadingSpinner в `frontend/src/components/LoadingSpinner.tsx` (индикатор загрузки)
+- [X] T075 [P] Создать компонент ToastNotification в `frontend/src/components/ToastNotification.tsx` (уведомления об ошибках/успехе)
+- [X] T076 Настроить React Router в `frontend/src/App.tsx` (маршруты: /, /upload, /books/:id/read)
+- [X] T077 Добавить placeholder image для книг без обложки в `frontend/public/default-cover.svg`
+- [X] T078 [P] Написать E2E тесты в `tests/e2e/test_upload_and_read_flow.spec.ts` (Playwright: загрузка → просмотр → чтение)
+- [X] T079 [P] Написать E2E тесты в `tests/e2e/test_library_management.spec.ts` (Playwright: переименование, удаление, поиск)
+- [X] T080 Задокументировать API в `backend/README.md` (ссылки на contracts, примеры использования)
+- [X] T081 Запустить quickstart.md validation — проверить, что приложение запускается согласно инструкции
+- [X] T082 Финальный запуск всех тестов: `cd backend && pytest` + `cd frontend && npm test`
 
 ---
 
@@ -289,6 +289,8 @@ Task: "Сервис парсинга TXT в backend/src/services/txt_parser.py"
 - Phase 4 (US2): 23 задач (5 тестов + 18 реализации)
 - Phase 5 (US3): 7 задач (2 теста + 5 реализации)
 - Phase 6 (Polish): 10 задач
+
+**Статус**: Все 82 задачи выполнены ✅
 
 **Параллельные возможности**: 25+ задач с标记 [P] можно выполнять параллельно
 

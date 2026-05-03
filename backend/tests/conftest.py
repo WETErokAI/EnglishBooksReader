@@ -31,12 +31,15 @@ class SQLiteUUID(TypeDecorator):
 def db_session():
     """Создать тестовую сессию БД (SQLite in-memory)."""
     # Заменяем UUID типы на совместимые с SQLite на уровне таблицы
-    from src.models.book import Book, BookChunk
+    from src.models.book import Book, BookChunk, ReadingPosition
 
     # Обновляем типы в таблицах
     Book.__table__.c['id'].type = SQLiteUUID()
     BookChunk.__table__.c['id'].type = SQLiteUUID()
     BookChunk.__table__.c['book_id'].type = SQLiteUUID()
+    ReadingPosition.__table__.c['id'].type = SQLiteUUID()
+    ReadingPosition.__table__.c['book_id'].type = SQLiteUUID()
+    ReadingPosition.__table__.c['chunk_id'].type = SQLiteUUID()
 
     engine = create_engine(
         "sqlite:///:memory:",
