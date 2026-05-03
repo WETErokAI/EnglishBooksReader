@@ -4,6 +4,7 @@ SQLAlchemy модели для библиотеки книг.
 Сущности:
 - Book: книга с метаданными
 - BookChunk: чанк контента книги для динамической подгрузки
+- ReadingPosition: позиция последнего чтения для книги
 """
 
 import uuid
@@ -48,6 +49,12 @@ class Book(Base):
         lazy="selectin",
         cascade="all, delete-orphan",
     )
+    reading_position = relationship(
+        "ReadingPosition",
+        back_populates="book",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
 
     __table_args__ = (
         Index("idx_book_title_author", "title", "author"),
@@ -63,7 +70,11 @@ class BookChunk(Base):
     __tablename__ = "book_chunks"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    book_id = Column(UUID(as_uuid=True), ForeignKey("books.id"), nullable=False)
+    book_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("books.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     chunk_index = Column(Integer, nullable=False)
     content_html = Column(Text, nullable=False)
     word_count = Column(Integer, nullable=False)
@@ -76,3 +87,29 @@ class BookChunk(Base):
 
     def __repr__(self) -> str:
         return f"<BookChunk(id={self.id}, book_id={self.book_id}, index={self.chunk_index})>"
+
+
+class ReadingPosition(Base):
+    """Модель позиции последнего чтения для книги."""
+
+    __tablename__ = "reading_positions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    book_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("books.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    chunk_id = Column(UUID(as_uuid=True), nullable=False)
+    offset = Column(Integer, nullable=False, default=0)
+    last_read_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    book = relationship("Book", back_populates="reading_position")
+
+    __table_args__ = (
+        Index("idx_reading_position_book_id", "book_id", unique=True),
+    )
+
+    def __repr__(self) -> str:
+        return f"<ReadingPosition(book_id={self.book_id}, chunk_id={self.chunk_id}, offset={self.offset})>"

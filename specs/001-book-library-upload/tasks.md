@@ -112,9 +112,9 @@
 ### Тесты для User Story 2 (TDD — писать ДО кода) ⚠️
 
 - [X] T043 [P] [US2] Unit-тест BookRepository search/duplicate methods в `backend/tests/unit/test_book_repository.py`
+- [X] T044 [P] [US2] Unit-тест BookCard component в `frontend/tests/unit/test_BookCard.test.tsx` — компонент существует (`BookCard.tsx`), тестирует: рендер обложки/названия/автора, fallback обложки, обработка кликов (read/rename/delete)
 - [X] T045 [US2] Интеграционный тест library endpoints в `backend/tests/integration/test_library_operations.py` (GET список, PATCH rename, DELETE, GET chunks)
-- [X] T046 [P] [US2] Unit-тест BookCard component в `frontend/tests/unit/test_BookCard.test.tsx`
-- [X] T047 [P] [US2] Unit-тест BookList component в `frontend/tests/unit/test_BookList.test.tsx`
+- [X] T046 [P] [US2] Unit-тест BookList component в `frontend/tests/unit/test_BookList.test.tsx` — компоненты существуют (`BookListView.tsx`, `BookListRow.tsx`), тестируют: рендер списка/таблицы, пустой список, рендер строк с обложками
 
 ### Реализация для User Story 2
 

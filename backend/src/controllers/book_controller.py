@@ -66,8 +66,6 @@ async def upload_book(
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Внутренняя ошибка: {str(e)}")
 
 
@@ -97,33 +95,18 @@ async def upload_book_from_url(
     Raises:
         HTTPException: При ошибках загрузки или дубликата.
     """
-    import httpx
-    import tempfile
-    from pathlib import Path
-    from fastapi import UploadFile
-
-    # Скачиваем файл
-    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-        try:
-            response = await client.get(url)
-            response.raise_for_status()
-        except httpx.HTTPError:
-            raise HTTPException(status_code=400, detail="Некорректная или недоступная ссылка")
-
-    content = response.content
-    filename = url.split("/")[-1].split("?")[0] or "downloaded_file"
-
-    # Создаём UploadFile
-    upload_file = UploadFile(
-        filename=filename,
-        file=tempfile.SpooledTemporaryFile(),
-    )
-    await upload_file.write(content)
-    await upload_file.seek(0)
-
     service = BookService(db)
+
+    # Скачиваем файл через сервис
     try:
-        return await service.upload_book(upload_file)
+        download_file = await service.download_file_from_url(url)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка при скачивании файла: {str(e)}")
+
+    try:
+        return await service.upload_book(download_file)
     except HTTPException:
         raise
     except ValueError as e:
@@ -279,23 +262,12 @@ def get_book_chunks(
     Raises:
         HTTPException: Если книга не найдена.
     """
-    from src.models.book import Book, BookChunk
-
     repository = BookRepository(db)
     book = repository.get_by_id(book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Книга не найдена")
 
-    # Загружаем чанки с фильтрацией на уровне SQL
-    chunks_query = db.query(BookChunk).filter(
-        BookChunk.book_id == book_id
-    )
-    if from_chunk is not None:
-        chunks_query = chunks_query.filter(BookChunk.chunk_index >= from_chunk)
-    if to_chunk is not None:
-        chunks_query = chunks_query.filter(BookChunk.chunk_index <= to_chunk)
-    chunks_query = chunks_query.order_by(BookChunk.chunk_index)
-    chunks = chunks_query.all()
+    chunks = repository.get_chunks(book_id, from_index=from_chunk, to_index=to_chunk)
 
     return BookChunksResponse(
         book_id=book_id,

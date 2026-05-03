@@ -8,6 +8,7 @@ E2E тест удаления книги — полная проверка от 
 4. Книга УДАЛЕНА из БД (проверка через новую сессию)
 5. API GET /books не возвращает удалённую книгу
 6. API GET /books/{id} возвращает 404
+7. Файлы книги и обложек удалены с диска
 """
 
 import pytest
@@ -21,7 +22,7 @@ from sqlalchemy import create_engine, event, inspect, String, TypeDecorator
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from src.models.book import Base, Book, BookChunk
+from src.models.book import Base, Book, BookChunk, ReadingPosition
 
 
 class SQLiteUUID(TypeDecorator):
@@ -52,12 +53,16 @@ def client_and_engine(tmp_path):
     """Создать клиент с ОТДЕЛЬНЫМ engine для проверок БД."""
     from app.main import app as main_app
     from app.database import get_db
+    from app.config import settings
     from src.utils import storage as storage_module
 
     # Патчим UUID типы на SQLite-совместимые
     Book.__table__.c['id'].type = SQLiteUUID()
     BookChunk.__table__.c['id'].type = SQLiteUUID()
     BookChunk.__table__.c['book_id'].type = SQLiteUUID()
+    ReadingPosition.__table__.c['id'].type = SQLiteUUID()
+    ReadingPosition.__table__.c['book_id'].type = SQLiteUUID()
+    ReadingPosition.__table__.c['chunk_id'].type = SQLiteUUID()
 
     # Создаём ОТДЕЛЬНЫЙ engine для проверок
     test_engine = create_engine(
@@ -86,7 +91,7 @@ def client_and_engine(tmp_path):
 
     main_app.dependency_overrides[get_db] = override_get_db
 
-    # Патчим storage
+    # Патчим storage — пути в tmp_path
     storage_module.ensure_storage_directories = lambda: None
     books_dir = tmp_path / "books"
     covers_dir = tmp_path / "covers"
@@ -98,11 +103,20 @@ def client_and_engine(tmp_path):
     storage_module.generate_cover_path = lambda book_id: str(covers_dir / f"{book_id}.jpg")
     storage_module.generate_thumbnail_path = lambda book_id: str(thumbnails_dir / f"{book_id}.jpg")
 
+    # Патчим settings — чтобы _delete_files использовал tmp_path
+    original_books_path = settings.BOOKS_STORAGE_PATH
+    original_covers_path = settings.COVERS_STORAGE_PATH
+    settings.BOOKS_STORAGE_PATH = str(books_dir)
+    settings.COVERS_STORAGE_PATH = str(covers_dir)
+
     client = TestClient(main_app)
 
-    yield client, test_engine
+    yield client, test_engine, tmp_path
 
     main_app.dependency_overrides.clear()
+    # Восстанавливаем settings
+    settings.BOOKS_STORAGE_PATH = original_books_path
+    settings.COVERS_STORAGE_PATH = original_covers_path
 
 
 def _create_minimal_epub() -> bytes:
@@ -138,27 +152,47 @@ class TestDeleteBookE2E:
 
     def test_delete_book_full_flow(self, client_and_engine):
         """Полный flow: создать → проверить в БД → удалить → проверить что УДАЛЕНА."""
-        client, test_engine = client_and_engine
-
-        # ====== STEP 1: Создаём книгу напрямую через БД ======
+        client, test_engine, tmp_path = client_and_engine
         Session = sessionmaker(bind=test_engine)
-        session = Session()
 
+        # ====== STEP 1: Создаём книгу и файлы на диске ======
         book_id = uuid4()
+
+        # Создаём файлы на диске
+        book_file = tmp_path / "books" / f"{book_id}.epub"
+        cover_file = tmp_path / "covers" / f"{book_id}.jpg"
+        thumb_file = tmp_path / "thumbnails" / f"{book_id}.jpg"
+        book_file.write_bytes(b"fake epub content")
+        cover_file.write_bytes(b"fake cover")
+        thumb_file.write_bytes(b"fake thumbnail")
+
         book = Book(
             id=book_id,
             title="Book To Delete",
             author="Test Author",
-            file_path="/path/to/book.epub",
+            file_path=str(book_file),
             file_format="epub",
             file_size=1000,
+            cover_image_path=str(cover_file),
+            cover_thumbnail_path=str(thumb_file),
             date_added=datetime.utcnow(),
         )
+
+        session = Session()
         session.add(book)
         session.commit()
         session.close()
 
         print(f"\n[STEP 1] Создана книга с id={book_id}")
+        print(f"  file_path: {book_file}")
+        print(f"  cover: {cover_file}")
+        print(f"  thumb: {thumb_file}")
+
+        # ====== STEP 1.5: Проверяем что файлы существуют ======
+        assert book_file.exists(), "Файл книги ДОЛЖЕН существовать"
+        assert cover_file.exists(), "Файл обложки ДОЛЖЕН существовать"
+        assert thumb_file.exists(), "Файл миниатюры ДОЛЖЕН существовать"
+        print("[STEP 1.5] Все файлы подтверждены на диске")
 
         # ====== STEP 2: Проверяем что книга в БД через НОВУЮ сессию ======
         fresh_session = Session()
@@ -195,6 +229,12 @@ class TestDeleteBookE2E:
         fresh_session2.close()
         print("[STEP 6] Книга УДАЛЕНА из БД — подтверждено через новую сессию")
 
+        # ====== STEP 6.5: Проверяем что файлы УДАЛЕНЫ с диска ======
+        assert not book_file.exists(), f"Файл книги {book_file} НЕ должен существовать после удаления"
+        assert not cover_file.exists(), f"Файл обложки {cover_file} НЕ должен существовать после удаления"
+        assert not thumb_file.exists(), f"Файл миниатюры {thumb_file} НЕ должен существовать после удаления"
+        print("[STEP 6.5] Все файлы удалены с диска")
+
         # ====== STEP 7: Проверяем что GET /books/{id} возвращает 404 ======
         get_after_delete = client.get(f"/api/v1/books/{book_id}")
         assert get_after_delete.status_code == 404, f"GET после удаления должен вернуть 404, получил {get_after_delete.status_code}"
@@ -212,7 +252,7 @@ class TestDeleteBookE2E:
 
     def test_delete_multiple_books(self, client_and_engine):
         """Удаление нескольких книг по очереди."""
-        client, test_engine = client_and_engine
+        client, test_engine, _tmp_path = client_and_engine
         Session = sessionmaker(bind=test_engine)
 
         # Создаём 3 книги
