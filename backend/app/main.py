@@ -6,8 +6,11 @@ FastAPI приложение.
 
 from contextlib import asynccontextmanager
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import engine
@@ -43,6 +46,11 @@ app.add_middleware(
 
 # Регистрируем роутер книг
 app.include_router(books_router, prefix="/api/v1")
+
+# Раздача статических файлов обложек
+COVERS_PATH = Path(settings.COVERS_STORAGE_PATH)
+if COVERS_PATH.exists():
+    app.mount("/api/v1/static/covers", StaticFiles(directory=str(COVERS_PATH)), name="covers")
 
 
 @app.get("/health")

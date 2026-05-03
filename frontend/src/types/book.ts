@@ -13,20 +13,29 @@ export interface BookDTO {
   file_format: FileFormat;
   cover_thumbnail_path: string | null;
   date_added: string; // ISO datetime
-  has_reading_position: boolean;
 }
 
 /** DTO для списка книг с пагинацией */
 export interface BookListDTO {
   books: BookDTO[];
   total: number;
+  page?: number;
+  page_size?: number;
 }
 
-/** Позиция чтения */
-export interface ReadingPosition {
-  chunk_id: string;
-  offset: number;
-  timestamp: string; // ISO datetime
+/** Параметры для чанков книги */
+export interface BookChunksResponse {
+  book_id: string;
+  chunks: BookChunkDTO[];
+  total_chunks: number;
+}
+
+/** DTO для чанка книги */
+export interface BookChunkDTO {
+  id: string; // UUID чанка
+  chunk_index: number;
+  content_html: string;
+  word_count: number;
 }
 
 /** Ответ с ошибкой от API */
@@ -36,13 +45,13 @@ export interface ErrorResponse {
 
 /** Параметры для получения списка книг */
 export interface GetBooksParams {
-  skip?: number;
-  limit?: number;
+  page?: number;
+  page_size?: number;
   search?: string;
 }
 
 /** Данные для обновления книги */
 export interface BookUpdate {
   title?: string;
-  author?: string;
+  author?: string | undefined;
 }

@@ -6,11 +6,14 @@
 - Fallback на фиксированный размер (~5000 слов)
 """
 
+import logging
 import re
 from typing import Optional
 
 # Целевой размер чанка в словах
 TARGET_CHUNK_SIZE = 5000
+
+logger = logging.getLogger(__name__)
 
 
 class ChunkingService:
@@ -29,14 +32,20 @@ class ChunkingService:
             ValueError: Если контент пустой или только пробелы.
         """
         if not content or not content.strip():
+            logger.warning("Контент пустой")
             raise ValueError("Контент пустой")
 
+        logger.info(f"Начинаю чанкинг контента, длина={len(content)} символов")
+        
         # Пробуем разбить по главам
         chunks = self._chunk_by_chapters(content)
+        logger.info(f"_chunk_by_chapters вернул {len(chunks)} чанков")
 
         if not chunks:
             # Fallback: разбиение по размеру
+            logger.info("Нет чанков от _chunk_by_chapters, использую fallback по слову")
             chunks = self._chunk_by_word_count(content)
+            logger.info(f"_chunk_by_word_count вернул {len(chunks)} чанков")
 
         return chunks
 
@@ -139,7 +148,7 @@ class ChunkingService:
         Returns:
             Количество слов.
         """
-        # Удаляем HTML теги
-        text = re.sub(r"<[^>]+>", "", html)
+        # Заменяем HTML теги на пробелы (чтобы слова не слипались)
+        text = re.sub(r"<[^>]+>", " ", html)
         # Считаем слова
         return len(text.split())

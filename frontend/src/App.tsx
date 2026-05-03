@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import UploadPage from './pages/UploadPage';
+import { LibraryPage } from './pages/LibraryPage';
+import { ReaderPage } from './pages/ReaderPage';
 
 function App() {
   return (
@@ -31,15 +33,10 @@ function App() {
         {/* Main content */}
         <main className="max-w-7xl mx-auto px-4 py-6">
           <Routes>
-            <Route path="/" element={<Navigate to="/upload" replace />} />
+            <Route path="/" element={<Navigate to="/library" replace />} />
             <Route path="/upload" element={<UploadPage />} />
-            {/* Маршруты для библиотеки и чтения будут добавлены в Phase 4 */}
-            <Route path="/library" element={
-              <div className="text-center py-16">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Библиотека</h2>
-                <p className="text-gray-600">Будет реализована в Phase 4</p>
-              </div>
-            } />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/books/:bookId/read" element={<ReaderPage />} />
           </Routes>
         </main>
       </div>

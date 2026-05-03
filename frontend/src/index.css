@@ -20,3 +20,21 @@ body {
   width: 100%;
   min-height: 100vh;
 }
+
+/* Reader page styles */
+.reader-chunk {
+  position: relative;
+  padding: 1rem 0;
+}
+
+.reader-chunk--active {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+  border-radius: 4px;
+  background-color: rgba(59, 130, 246, 0.03);
+}
+
+/* react-window scrollbar styling */
+.reader-page .ReactWindow__scroller {
+  overflow: hidden;
+}
