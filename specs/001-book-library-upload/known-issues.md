@@ -179,3 +179,170 @@ formatter = generic
 format = %(levelname)-5.5s [%(name)s] %(message)s
 datefmt = %H:%M:%S
 ```
+
+---
+
+## Проблема 6: Генерация тестовых EPUB-файлов создаёт невалидный архив
+
+**Дата обнаружения**: 2026-04-25
+**Файл**: `tests/integration/test_book_chunking.py`
+**Симптом**: `ebooklib.epub.EpubException: 'Can not find container file'` или `KeyError: "There is no item named '.' in the archive"` при загрузке тестового EPUB
+
+### Причина
+
+EPUB — это специфичный формат ZIP-архива. При ручной генерации через `zipfile` нужно соблюдать **строгие правила**:
+
+1. **`mimetype` должен быть первым файлом в архиве и НЕ сжат** (`compress_type=0`). Это требование спецификации EPUB 3.0. Стандартный `zf.writestr("mimetype", ...)` сжимает файл по умолчанию.
+2. **`content.opf` НЕ должен быть в корне архива** — он должен находиться в поддиректории (обычно `OEBPS/`). Библиотека `ebooklib` ищет `container.xml`, затем по пути из него открывает `content.opf`. Если пути не совпадают — ошибка.
+3. **HTML-файлы должны быть в той же директории, что и `content.opf`** — если `content.opf` в `OEBPS/`, то и `.xhtml` файлы тоже должны быть в `OEBPS/`.
+4. **`container.xml` должен содержать правильный namespace** — `xmlns="urn:oasis:names:tc:opendocument:xmlns:container"`.
+5. **`content.opf` должен содержать правильный namespace пакета** — `xmlns="http://www.idpf.org/2007/opf"`.
+
+### Решение
+
+```python
+import zipfile
+from io import BytesIO
+
+def _create_epub_with_multiple_chapters() -> bytes:
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_STORED) as zf:
+        # 1. mimetype — ОБЯЗАТЕЛЬНО без сжатия, через ZipInfo
+        zf.writestr(zipfile.ZipInfo("mimetype"), "application/epub+zip")
+
+        # 2. container.xml указывает на OEBPS/content.opf
+        zf.writestr("META-INF/container.xml",
+            '<?xml version="1.0"?>'
+            '<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">'
+            '<rootfiles>'
+            '<rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>'
+            '</rootfiles></container>')
+
+        # 3. content.opf в поддиректории OEBPS/
+        zf.writestr("OEBPS/content.opf",
+            '<?xml version="1.0"?>'
+            '<package version="3.0" unique-id="uid" '
+            'xmlns="http://www.idpf.org/2007/opf">'
+            '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
+            '<dc:identifier id="uid">urn:uuid:test</dc:identifier>'
+            '<dc:title>Test Book</dc:title>'
+            '<dc:creator>Test Author</dc:creator>'
+            '</metadata>'
+            '<manifest>'
+            '<item id="ch1" href="ch1.xhtml" media-type="application/xhtml+xml"/>'
+            '</manifest>'
+            '<spine><itemref idref="ch1"/></spine>'
+            '</package>')
+
+        # 4. HTML-файлы тоже в OEBPS/
+        zf.writestr("OEBPS/ch1.xhtml",
+            '<html xmlns="http://www.w3.org/1999/xhtml">'
+            '<body><h1>Chapter 1</h1><p>Test content.</p></body></html>')
+
+    buf.seek(0)
+    return buf.getvalue()
+```
+
+### Как проверить валидность EPUB
+
+```python
+import zipfile
+
+# Проверить структуру
+zf = zipfile.ZipFile("test.epub")
+print(zf.namelist())
+
+# Проверить что mimetype без сжатия
+info = zf.getinfo("mimetype")
+assert info.compress_type == 0, "mimetype должен быть без сжатия!"
+
+# Закрыть архив
+zf.close()
+```
+
+### Как избежать повторения
+
+1. Использовать **реальный EPUB** (`tests/fixtures/pg84.epub`) как образец структуры
+2. Перед коммитом тестовых EPUB-генераторов проверять валидность через `zipfile`
+3. Для production-генерации EPUB использовать библиотеку `ebooklib` вместо ручного ZIP
+
+### Полезные ссылки
+
+- Структура реального EPUB: `backend/tests/fixtures/pg84.epub`
+- Спецификация EPUB 3.0: https://www.w3.org/TR/epub-33/
+- Open Container Format (OCF): https://www.idpf.org/edition/oebps/ocf/
+
+---
+
+## Проблема 7: SQLAlchemy 2.0 — неверный синтаксис передачи bind-параметров
+
+**Дата обнаружения**: 2026-04-25
+**Файл**: `tests/integration/test_book_chunking.py`
+**Симптом**: `sqlalchemy.exc.InvalidRequestError: A value is required for bind parameter 'book_id'`
+
+### Причина
+
+В SQLAlchemy 2.0 метод `.scalar()` **не принимает** аргумент `params=`. Параметры должны передаваться во второй аргумент метода `.execute()`:
+
+```python
+# ❌ НЕПРАВИЛЬНО — params= игнорируется, bind parameter остаётся без значения
+stmt = text("SELECT COUNT(*) FROM book_chunks WHERE book_id = :book_id")
+result = db_session.execute(stmt).scalar(params={"book_id": book_id})
+
+# ✅ ПРАВИЛЬНО — параметры во втором аргументе execute()
+stmt = text("SELECT COUNT(*) FROM book_chunks WHERE book_id = :book_id")
+result = db_session.execute(stmt, {"book_id": book_id}).scalar()
+```
+
+### Решение
+
+Всегда передавать параметры как **второй позиционный аргумент** `.execute()`:
+
+```python
+# Общий паттерн
+db_session.execute(
+    text("SQL с :bind_params"),
+    {"bind_param": value}
+).scalar()  # или .fetchall(), .first() и т.д.
+```
+
+### Как избежать повторения
+
+1. При использовании `sqlalchemy.text()` — всегда проверять сигнатуру `.execute()`
+2. SQLAlchemy 2.0 изменил API: параметры больше не передаются через `.scalar(params=...)`
+3. Документация: https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.text
+
+---
+
+## Проблема 8: ebooklib — константа ITEM_DOCUMENT удалена в новых версиях
+
+**Дата обнаружения**: 2026-04-25
+**Файл**: `src/services/epub_parser.py`
+**Симптом**: `AttributeError: module 'ebooklib.epub' has no attribute 'ITEM_DOCUMENT'`
+
+### Причина
+
+В более новых версиях `ebooklib` (после 0.18) константа `ITEM_DOCUMENT` удалена. Метод `book.get_items_of_type(epub.ITEM_DOCUMENT)` больше не работает.
+
+### Решение
+
+Использовать проверку типа вместо константы:
+
+```python
+# ❌ НЕПРАВИЛЬНО — ITEM_DOCUMENT удалён
+html_items = book.get_items_of_type(epub.ITEM_DOCUMENT)
+
+# ✅ ПРАВИЛЬНО — проверка по классу
+html_items = [item for item in book.get_items() if isinstance(item, epub.EpubHtml)]
+```
+
+### Как избежать повторения
+
+1. Всегда использовать `isinstance(item, epub.EpubHtml)` вместо `epub.ITEM_DOCUMENT`
+2. Проверять версию `ebooklib` при обновлении зависимости
+3. При миграции на новую версию — grep по `ITEM_DOCUMENT` для поиска устаревшего кода
+
+### Полезные ссылки
+
+- Changelog ebooklib: https://github.com/aerkalov/ebooklib/releases
+- Классы ebooklib: https://github.com/aerkalov/ebooklib/blob/master/ebooklib/epub.py

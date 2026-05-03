@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="280" viewBox="0 0 200 280">
+  <rect width="200" height="280" fill="#e5e7eb" rx="8"/>
+  <rect x="20" y="30" width="160" height="220" fill="none" stroke="#9ca3af" stroke-width="2" rx="4"/>
+  <text x="100" y="130" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="16" font-weight="bold">Нет обложки</text>
+  <text x="100" y="155" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="12">No Cover</text>
+  <line x1="60" y1="175" x2="140" y2="175" stroke="#9ca3af" stroke-width="1"/>
+  <line x1="75" y1="185" x2="125" y2="185" stroke="#9ca3af" stroke-width="1"/>
+</svg>

@@ -91,14 +91,15 @@ class TestBookUpload:
         """Успешная загрузка EPUB файла."""
         epub_content = self._create_epub_bytes()
 
-        with patch("src.controllers.book_controller.BookController") as mock_controller:
-            mock_controller.upload.return_value = MagicMock(
+        with patch("src.services.book_service.BookService.upload_book") as mock_upload:
+            from datetime import datetime
+            mock_upload.return_value = MagicMock(
                 id="550e8400-e29b-41d4-a716-446655440000",
                 title="Test Book",
                 author="Test Author",
                 file_format="epub",
                 cover_thumbnail_path=None,
-                date_added="2026-04-08T10:30:00Z",
+                date_added=datetime.now(),
                 has_reading_position=False,
             )
 
@@ -137,8 +138,8 @@ class TestBookUpload:
 
     def test_upload_corrupted_epub(self, client, db_session):
         """Загрузка повреждённого EPUB файла."""
-        with patch("src.controllers.book_controller.BookController") as mock_controller:
-            mock_controller.upload.side_effect = ValueError("Файл повреждён")
+        with patch("src.services.book_service.BookService.upload_book") as mock_upload:
+            mock_upload.side_effect = ValueError("Файл повреждён")
 
             response = client.post(
                 "/api/v1/books/upload",
@@ -147,15 +148,15 @@ class TestBookUpload:
 
             assert response.status_code == 422
             data = response.json()
-            assert "повреждён" in data.get("error", "").lower() or "error" in data
+            assert "detail" in data
 
     def test_upload_duplicate_book(self, client, db_session):
         """Загрузка дубликата книги."""
         epub_content = self._create_epub_bytes()
 
-        with patch("src.controllers.book_controller.BookController") as mock_controller:
+        with patch("src.services.book_service.BookService.upload_book") as mock_upload:
             from fastapi import HTTPException
-            mock_controller.upload.side_effect = HTTPException(
+            mock_upload.side_effect = HTTPException(
                 status_code=409,
                 detail="Книга уже есть в библиотеке",
             )

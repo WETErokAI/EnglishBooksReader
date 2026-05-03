@@ -4,11 +4,113 @@
  * React Query мутации и запросы:
  * - uploadBook: мутация загрузки файла
  * - uploadBookFromUrl: мутация загрузки по URL
+ * - getBooks: query для получения списка книг
+ * - getBook: query для получения одной книги
+ * - updateBook: мутация обновления книги
+ * - deleteBook: мутация удаления книги
+ * - getBookChunks: query для получения чанков
  */
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../services/apiClient';
-import type { BookDTO } from '../types/book';
+import type {
+  BookDTO,
+  BookListDTO,
+  BookUpdate,
+  BookChunksResponse,
+  GetBooksParams,
+} from '../types/book';
+
+// ===== Get Books Query =====
+
+async function fetchBooks(params: GetBooksParams = {}): Promise<BookListDTO> {
+  const { page = 1, page_size = 20, search } = params;
+  const response = await apiClient.get<BookListDTO>('/books', {
+    params: { page, page_size, search },
+  });
+  return response.data;
+}
+
+export function useGetBooks(params: GetBooksParams = {}) {
+  return useQuery({
+    queryKey: ['books', params],
+    queryFn: () => fetchBooks(params),
+  });
+}
+
+// ===== Get Book Query =====
+
+async function fetchBook(bookId: string): Promise<BookDTO> {
+  const response = await apiClient.get<BookDTO>(`/books/${bookId}`);
+  return response.data;
+}
+
+export function useGetBook(bookId: string | null) {
+  return useQuery({
+    queryKey: ['book', bookId],
+    queryFn: () => fetchBook(bookId!),
+    enabled: !!bookId,
+  });
+}
+
+// ===== Update Book Mutation =====
+
+async function updateBookApi(params: { bookId: string; data: BookUpdate }): Promise<BookDTO> {
+  const response = await apiClient.patch<BookDTO>(`/books/${params.bookId}`, params.data);
+  return response.data;
+}
+
+export function useUpdateBook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateBookApi,
+    onSuccess: (_data, variables) => {
+      // Инвалидируем списки и конкретную книгу
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['book', variables.bookId] });
+    },
+  });
+}
+
+// ===== Delete Book Mutation =====
+
+async function deleteBookApi(bookId: string): Promise<void> {
+  console.log(`[deleteBookApi] Deleting book: ${bookId}`);
+  const response = await apiClient.delete(`/books/${bookId}`);
+  console.log(`[deleteBookApi] Delete response status: ${response.status}`);
+}
+
+export function useDeleteBook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteBookApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+    },
+  });
+}
+
+// ===== Get Book Chunks Query =====
+
+async function fetchBookChunks(
+  bookId: string,
+  range?: { from_chunk?: number; to_chunk?: number }
+): Promise<BookChunksResponse> {
+  const response = await apiClient.get<BookChunksResponse>(`/books/${bookId}/chunks`, {
+    params: range,
+  });
+  return response.data;
+}
+
+export function useGetBookChunks(bookId: string, range?: { from_chunk?: number; to_chunk?: number }) {
+  return useQuery({
+    queryKey: ['book-chunks', bookId, range],
+    queryFn: () => fetchBookChunks(bookId, range),
+    enabled: !!bookId,
+  });
+}
 
 // ===== Upload File Mutation =====
 

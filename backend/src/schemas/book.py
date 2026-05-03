@@ -41,7 +41,6 @@ class BookDTO(BaseModel):
     file_format: str
     cover_thumbnail_path: Optional[str]
     date_added: datetime
-    has_reading_position: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -51,3 +50,24 @@ class BookListDTO(BaseModel):
 
     books: list[BookDTO]
     total: int
+    page: int = 1
+    page_size: int = 20
+
+
+class BookChunkDTO(BaseModel):
+    """DTO для отображения чанка книги."""
+
+    id: UUID
+    chunk_index: int
+    content_html: str
+    word_count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BookChunksResponse(BaseModel):
+    """Схема для ответа с чанками книги."""
+
+    book_id: UUID
+    chunks: list[BookChunkDTO]
+    total_chunks: int

@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(mkdir *)",
-      "Bash(conda *)"
+      "Bash(conda *)",
+      "Bash(npx *)",
+      "Bash(pytest *)",
+      "Bash(curl *)",
+      "Bash(findstr *)",
+      "Bash(dir *)"
     ]
   },
   "$version": 3

@@ -5,19 +5,25 @@ CRUD операции:
 - get_all: получить все книги с пагинацией и поиском
 - get_by_id: получить книгу по ID
 - add: добавить книгу
-- delete: удалить книгу
+- delete: удалить книгу (БД + файлы на диске)
 - update: обновить метаданные
 - check_duplicate: проверка на дубликат
 - search: поиск по названию и автору
+- get_chunks: получить чанки книги с фильтрацией по индексу
 """
 
+import logging
+from pathlib import Path
 from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from src.models.book import Book
+from app.config import settings
+from src.models.book import Book, BookChunk
+
+logger = logging.getLogger(__name__)
 
 
 class BookRepository:
@@ -88,7 +94,7 @@ class BookRepository:
         return book
 
     def delete(self, book_id: UUID) -> bool:
-        """Удалить книгу по ID.
+        """Удалить книгу по ID (БД + файлы на диске).
 
         Args:
             book_id: UUID книги для удаления.
@@ -99,9 +105,50 @@ class BookRepository:
         book = self.get_by_id(book_id)
         if not book:
             return False
+
+        # Удалить файлы с диска
+        self._delete_files(book)
+
+        # Удалить из БД (каскадно удалит chunks и reading_positions)
         self.db.delete(book)
         self.db.commit()
         return True
+
+    def _delete_files(self, book: Book) -> None:
+        """Удалить файлы книги и обложек с диска.
+
+        Args:
+            book: Объект книги для удаления файлов.
+        """
+        covers_base = Path(settings.COVERS_STORAGE_PATH)
+
+        files_to_delete = []
+
+        # Файл книги (абсолютный путь)
+        if book.file_path:
+            files_to_delete.append(Path(book.file_path))
+
+        # Обложка (может быть относительный путь)
+        if book.cover_image_path:
+            p = Path(book.cover_image_path)
+            if not p.is_absolute():
+                p = covers_base / p
+            files_to_delete.append(p)
+
+        # Миниатюра (может быть относительный путь)
+        if book.cover_thumbnail_path:
+            p = Path(book.cover_thumbnail_path)
+            if not p.is_absolute():
+                p = covers_base / p
+            files_to_delete.append(p)
+
+        for file_path in files_to_delete:
+            try:
+                if file_path.exists():
+                    file_path.unlink()
+                    logger.info("Удалён файл: %s", file_path)
+            except OSError as e:
+                logger.warning("Не удалось удалить файл %s: %s", file_path, e)
 
     def update(self, book_id: UUID, updates: dict) -> Optional[Book]:
         """Обновить метаданные книги.
@@ -169,3 +216,28 @@ class BookRepository:
             .limit(limit)
             .all()
         )
+
+    def get_chunks(
+        self,
+        book_id: UUID,
+        from_index: Optional[int] = None,
+        to_index: Optional[int] = None,
+    ) -> list[BookChunk]:
+        """Получить чанки книги с опциональной фильтрацией по индексу.
+
+        Args:
+            book_id: UUID книги.
+            from_index: Индекс начального чанка (опционально).
+            to_index: Индекс конечного чанка (опционально).
+
+        Returns:
+            Отсортированный по индексу список чанков.
+        """
+        query = self.db.query(BookChunk).filter(BookChunk.book_id == book_id)
+
+        if from_index is not None:
+            query = query.filter(BookChunk.chunk_index >= from_index)
+        if to_index is not None:
+            query = query.filter(BookChunk.chunk_index <= to_index)
+
+        return query.order_by(BookChunk.chunk_index).all()
